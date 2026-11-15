@@ -122,7 +122,8 @@ const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.ge
 const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const APPS = {instagram:'אינסטגרם', youtube:'יוטיוב'};
 const params = new URLSearchParams(location.search);
-const appKey = (params.get('app')||'').toLowerCase();
+const rawApp = (params.get('app')||'').toLowerCase();
+const appKey = rawApp==='gate' ? 'instagram' : rawApp;
 const appName = APPS[appKey] || 'הפיד';
 const SCHEMES = {instagram:'instagram://app', youtube:'youtube://'};
 function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2200); }
