@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1a1c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>שומר הסף</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;700&family=Assistant:wght@400;600;700&display=swap">
+<style>
+/* Layout: one calm column, one task per screen. Dark-first by design: the gate is used at night too. */
+:root{
+  --bg:#0f1a1c;          /* deep sea-night */
+  --surface:#172628;
+  --line:#26393b;
+  --fg:#ece6da;          /* warm paper */
+  --muted:#9aa9a6;
+  --accent:#e7a95b;      /* lamp amber, used for the breath and primary actions */
+  --accent-ink:#1b1206;
+  --calm:#7fc3b0;        /* sea-glass, used for "done" and good choices */
+  --display:"Rubik",system-ui,sans-serif;
+  --body:"Assistant",system-ui,-apple-system,sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 18px/1.55 var(--body);-webkit-font-smoothing:antialiased;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+.wrap{max-width:520px;margin:0 auto;padding-block:28px 48px;
+  padding-left:max(20px,env(safe-area-inset-left,0px));padding-right:max(20px,env(safe-area-inset-right,0px));
+  display:flex;flex-direction:column;gap:28px;min-height:100%}
+h1,h2,h3{font-family:var(--display);font-weight:700;margin:0;text-wrap:balance;line-height:1.2}
+h1{font-size:30px}
+h2{font-size:22px}
+h3{font-size:17px;font-weight:500;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:15px}
+.eyebrow{font-size:14px;letter-spacing:.06em;color:var(--muted)}
+[hidden]{display:none!important}
+
+button,.btn{font:inherit;font-weight:700;border:0;border-radius:14px;padding:16px 18px;cursor:pointer;width:100%;
+  background:var(--surface);color:var(--fg);text-align:center;text-decoration:none;display:block;transition:transform .08s}
+button:active{transform:scale(.98)}
+button:focus-visible,input:focus-visible,textarea:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.primary{background:var(--accent);color:var(--accent-ink)}
+.good{background:var(--calm);color:#0c1d18}
+.ghost{background:transparent;color:var(--muted);font-weight:600;padding:12px}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.row>button{flex:1 1 0;min-width:80px}
+
+.card{background:var(--surface);border-radius:18px;padding:20px;display:flex;flex-direction:column;gap:14px}
+input[type=text],input[type=time],textarea{font:inherit;width:100%;background:var(--bg);color:var(--fg);
+  border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+textarea{min-height:90px;resize:vertical}
+
+/* breath */
+.breath{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;flex:1;text-align:center;padding-top:6vh}
+.orb{width:min(62vw,260px);aspect-ratio:1;border-radius:50%;max-width:100%;
+  background:radial-gradient(circle at 50% 45%,var(--accent) 0%,rgba(231,169,91,.35) 45%,rgba(231,169,91,0) 70%);
+  animation:breathe 8s ease-in-out infinite}
+@keyframes breathe{0%,100%{transform:scale(.55);opacity:.7}50%{transform:scale(1);opacity:1}}
+@media (prefers-reduced-motion:reduce){.orb{animation:none;transform:scale(.8)}}
+.count{font-family:var(--display);font-size:56px;font-variant-numeric:tabular-nums;line-height:1}
+
+.plan-now{border-right:4px solid var(--accent);padding:4px 14px 4px 0}
+.plan-now strong{font-family:var(--display);font-size:24px;display:block}
+
+.chips{display:flex;flex-wrap:wrap;gap:10px}
+.swap{background:var(--bg)}
+.chip{width:auto;padding:12px 16px;border:1px solid var(--line);background:transparent;font-weight:600;border-radius:999px}
+.chip[aria-pressed=true]{background:var(--fg);color:var(--bg);border-color:var(--fg)}
+
+.list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.list li{display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--line)}
+.list li:last-child{border-bottom:0}
+.check{width:28px;height:28px;flex:none;border-radius:50%;border:2px solid var(--muted);background:transparent;padding:0}
+.check[aria-checked=true]{background:var(--calm);border-color:var(--calm)}
+.done-text{text-decoration:line-through;color:var(--muted)}
+
+.timer{font-family:var(--display);font-size:72px;text-align:center;font-variant-numeric:tabular-nums;line-height:1}
+.center{text-align:center}
+.note{background:rgba(127,195,176,.12);border-radius:14px;padding:14px 16px;font-size:16px}
+.warn{background:rgba(231,169,91,.13)}
+details{background:var(--surface);border-radius:18px;padding:16px 20px}
+details summary{cursor:pointer;font-family:var(--display);font-weight:500;font-size:18px}
+details[open] summary{margin-bottom:12px}
+ol.steps{margin:0;padding-inline-start:22px;display:flex;flex-direction:column;gap:10px;font-size:16px}
+code{font-family:ui-monospace,Menlo,monospace;background:var(--bg);border:1px solid var(--line);border-radius:6px;padding:1px 6px;font-size:14px;direction:ltr;unicode-bidi:embed;word-break:break-all}
+.copybox{display:flex;gap:8px;align-items:center}
+.copybox code{flex:1;min-width:0;padding:10px}
+.copybox button{width:auto;padding:10px 14px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(24px + env(safe-area-inset-bottom,0px));background:var(--fg);color:var(--bg);
+  padding:10px 18px;border-radius:999px;font-weight:700;font-size:15px}
+</style>
+</head>
+<body>
+<main class="wrap" id="app"></main>
+<div class="toast" id="toast" hidden></div>
+
+<script>
+/* ---------- storage ---------- */
+const KEY = 'focus.v1';
+const DEFAULT = {
+  plan:{date:'',items:[]},
+  gate:[],                 // timestamps of gate visits
+  resisted:{date:'',n:0},
+  focus:null,              // {end, task, idx}
+  settings:{nightStart:'22:30',nightEnd:'07:00'},
+  swaps:['לשתות כוס מים ולעמוד ליד החלון','10 שכיבות סמיכה','סיבוב של 5 דקות בחוץ','להתקשר למישהו שאתה אוהב','לקרוא 5 עמודים בספר','לסדר דבר אחד בחדר','לכתוב מה מטריד אותך עכשיו']
+};
+function load(){ try{ return Object.assign(structuredClone(DEFAULT), JSON.parse(localStorage.getItem(KEY)||'{}')); }catch(e){ return structuredClone(DEFAULT); } }
+function save(){ try{ localStorage.setItem(KEY, JSON.stringify(S)); }catch(e){} }
+let S = load();
+
+/* ---------- helpers ---------- */
+const $ = s => document.querySelector(s);
+const app = $('#app');
+const today = () => { const d=new Date(); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); };
+const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const APPS = {instagram:'אינסטגרם', youtube:'יוטיוב'};
+const params = new URLSearchParams(location.search);
+const appKey = (params.get('app')||'').toLowerCase();
+const appName = APPS[appKey] || appKey || 'האפליקציה';
+function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2200); }
+function mins(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
+function isNight(){
+  const n=new Date(), cur=n.getHours()*60+n.getMinutes();
+  const a=mins(S.settings.nightStart), b=mins(S.settings.nightEnd);
+  return a<=b ? (cur>=a && cur<b) : (cur>=a || cur<b);
+}
+function planToday(){ if(S.plan.date!==today()) S.plan={date:today(),items:[]}; return S.plan.items; }
+function nextTask(){ return planToday().find(i=>!i.done && i.text.trim()); }
+function resistedToday(){ if(S.resisted.date!==today()) S.resisted={date:today(),n:0}; return S.resisted; }
+function pickSwaps(n){ const a=[...S.swaps].sort(()=>Math.random()-.5); return a.slice(0,n); }
+function greeting(){ const h=new Date().getHours(); return h<12?'בוקר טוב':h<17?'צהריים טובים':h<21?'ערב טוב':'לילה טוב'; }
+
+/* ---------- gate ---------- */
+const NIGHT_PHRASE = 'אני בוחר להיכנס עכשיו במקום לנוח';
+function gateStart(){
+  const now=Date.now();
+  S.gate = S.gate.filter(t=> now-t < 24*3600e3);
+  const lastHour = S.gate.filter(t=> now-t < 3600e3).length;
+  // record once per page load
+  if(!sessionStorage.getItem('gate-'+location.search)){ S.gate.push(now); try{sessionStorage.setItem('gate-'+location.search,'1')}catch(e){} }
+  save();
+  let wait = Math.min(10 + lastHour*8, 60);
+  if(isNight()) wait += 20;
+  renderBreath(wait, lastHour);
+}
+
+function renderBreath(wait, lastHour){
+  app.innerHTML = `
+    <section class="breath" aria-live="polite">
+      <p class="eyebrow">רגע לפני ${esc(appName)}</p>
+      <div class="orb" aria-hidden="true"></div>
+      <p id="phase" style="font-size:22px;font-family:var(--display)">נשום פנימה</p>
+      <div class="count" id="count">${wait}</div>
+      ${lastHour>0?`<p class="muted small">זו הפעם ה-${lastHour+1} בשעה האחרונה, אז ההמתנה ארוכה יותר.</p>`:''}
+      ${isNight()?`<p class="muted small">עכשיו שעות הלילה שלך.</p>`:''}
+    </section>`;
+  let left = wait;
+  const t0 = Date.now();
+  const tick = () => {
+    const el=$('#count'); if(!el) return;
+    left = Math.max(0, wait - Math.floor((Date.now()-t0)/1000));
+    el.textContent = left;
+    const p = ((Date.now()-t0)/1000)%8;
+    $('#phase').textContent = p<4 ? 'נשום פנימה' : 'ונשוף החוצה';
+    if(left<=0) return renderChoice();
+    setTimeout(tick, 250);
+  };
+  tick();
+}
+
+function renderChoice(){
+  const task = nextTask();
+  const swaps = pickSwaps(3);
+  app.innerHTML = `
+    <section class="stack" style="gap:22px">
+      <h1>מה תכננת לעשות עכשיו?</h1>
+      ${task ? `
+        <div class="plan-now"><span class="eyebrow">הבא בתוכנית שלך להיום</span><strong>${esc(task.text)}</strong></div>
+        <button class="primary" id="doTask">אני עושה את זה במקום (25 דקות)</button>
+      ` : `
+        <p class="muted">עוד לא כתבת מה חשוב לך היום. דקה אחת, ואז הטלפון יזכיר לך את זה בכל פעם.</p>
+        <button class="primary" id="goPlan">לתכנן את היום עכשיו</button>
+      `}
+      <div class="card">
+        <h3>או משהו קטן שמרגיש טוב יותר</h3>
+        <div class="stack">${swaps.map(s=>`<button class="swap" data-s="${esc(s)}">${esc(s)}</button>`).join('')}</div>
+      </div>
+      <button class="good" id="resist">סגרתי, לא נכנס</button>
+      <button class="ghost" id="enter">בכל זאת להיכנס ל${esc(appName)}</button>
+    </section>`;
+  if(task) $('#doTask').onclick = () => startFocus(task.text);
+  else $('#goPlan').onclick = () => { history.replaceState(null,'',location.pathname); renderHome(true); };
+  document.querySelectorAll('.swap').forEach(b=> b.onclick = () => { win('לך על זה: '+b.dataset.s); });
+  $('#resist').onclick = () => win();
+  $('#enter').onclick = renderIntent;
+}
+
+function win(msg){
+  const r=resistedToday(); r.n++; save();
+  app.innerHTML = `
+    <section class="breath">
+      <h1>בחרת בזמן שלך.</h1>
+      ${msg?`<p style="font-size:20px">${esc(msg)}</p>`:''}
+      <p class="muted">היום ויתרת ${r.n} ${r.n===1?'פעם':'פעמים'}. כל פעם כזו מחזקת את ההרגל.</p>
+      <div class="stack" style="width:100%">
+        <button class="primary" id="home">לתוכנית שלי</button>
+      </div>
+      <p class="muted small">עכשיו אפשר לנעול את הטלפון ולהניח אותו בצד.</p>
+    </section>`;
+  $('#home').onclick = () => { history.replaceState(null,'',location.pathname); renderHome(); };
+}
+
+function renderIntent(){
+  const night = isNight();
+  const reasons = ['לענות למישהו','לחפש משהו מסוים','לפרסם משהו','משעמם לי','לברוח ממשהו','סתם, הרגל'];
+  const times = night ? [3,5] : [3,5,10];
+  app.innerHTML = `
+    <section class="stack" style="gap:22px">
+      <h1>בשביל מה אתה נכנס?</h1>
+      <div class="chips" id="reasons">${reasons.map(r=>`<button class="chip" aria-pressed="false">${r}</button>`).join('')}</div>
+      <div id="reflect" class="note warn" hidden></div>
+      <div class="stack">
+        <h3>לכמה זמן?</h3>
+        <div class="row" id="times">${times.map(t=>`<button class="chip" style="flex:1" data-t="${t}" aria-pressed="false">${t} דקות</button>`).join('')}</div>
+      </div>
+      ${night?`
+        <div class="stack">
+          <h3>שעות הלילה. כדי להמשיך, הקלד:</h3>
+          <p style="font-weight:700">${NIGHT_PHRASE}</p>
+          <input type="text" id="phrase" autocomplete="off" aria-label="משפט אישור">
+        </div>`:''}
+      <button class="primary" id="go" disabled style="opacity:.45">בחר סיבה וזמן</button>
+      <button class="ghost" id="back">חזרה</button>
+      <p class="muted small center">כשהזמן ייגמר יצלצל טיימר. זה הסימן לצאת.</p>
+    </section>`;
+  let reason=null, t=null;
+  const go=$('#go');
+  const update=()=>{
+    const okPhrase = !night || ($('#phrase').value.trim()===NIGHT_PHRASE);
+    const ok = reason && t && okPhrase;
+    go.disabled=!ok; go.style.opacity=ok?1:.45;
+    go.textContent = !reason||!t ? 'בחר סיבה וזמן' : !okPhrase ? 'הקלד את המשפט' : `פתח את ${appName} ל-${t} דקות`;
+  };
+  document.querySelectorAll('#reasons .chip').forEach(b=> b.onclick=()=>{
+    document.querySelectorAll('#reasons .chip').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); reason=b.textContent;
+    const r=$('#reflect');
+    if(['משעמם לי','לברוח ממשהו','סתם, הרגל'].includes(reason)){
+      const s=pickSwaps(1)[0];
+      r.innerHTML = reason==='לברוח ממשהו'
+        ? 'הפיד לא יפתור את מה שמכביד. אולי שתי דקות לכתוב מה זה, או לדבר עם מישהו?'
+        : `הדחף יעבור תוך כמה דקות גם בלי הפיד. אולי במקום: <strong>${esc(s)}</strong>?`;
+      r.hidden=false;
+    } else r.hidden=true;
+    update();
+  });
+  document.querySelectorAll('#times .chip').forEach(b=> b.onclick=()=>{
+    document.querySelectorAll('#times .chip').forEach(x=>x.setAttribute('aria-pressed','false'));
+    b.setAttribute('aria-pressed','true'); t=+b.dataset.t; update();
+  });
+  if(night) $('#phrase').oninput=update;
+  $('#back').onclick=renderChoice;
+  go.onclick=()=>{
+    if(go.disabled) return;
+    const key = APPS[appKey] ? appKey : 'instagram';
+    const url = 'shortcuts://run-shortcut?name=' + encodeURIComponent('FocusAllow') + '&input=text&text=' + encodeURIComponent(key+','+t);
+    location.href = url;
+    setTimeout(()=>{ app.insertAdjacentHTML('beforeend', `<p class="note small">אם לא קרה כלום, הקיצור FocusAllow עוד לא מוגדר. ההוראות נמצאות במסך הבית תחת "הגדרה באייפון".</p>`); }, 2500);
+  };
+  update();
+}
+
+/* ---------- focus ---------- */
+let wake=null;
+function startFocus(task){
+  S.focus={end:Date.now()+25*60e3, task}; save();
+  history.replaceState(null,'',location.pathname);
+  renderFocus();
+}
+async function renderFocus(){
+  const f=S.focus; if(!f) return renderHome();
+  app.innerHTML = `
+    <section class="breath">
+      <p class="eyebrow">עכשיו אתה עושה</p>
+      <h1>${esc(f.task)}</h1>
+      <div class="timer" id="tm">25:00</div>
+      <p class="muted small">אפשר לנעול את הטלפון. הטיימר ממשיך.</p>
+      <div class="stack" style="width:100%">
+        <button class="good" id="fin">סיימתי</button>
+        <button class="ghost" id="stop">להפסיק</button>
+      </div>
+    </section>`;
+  try{ wake = await navigator.wakeLock?.request('screen'); }catch(e){}
+  const tick=()=>{
+    const el=$('#tm'); if(!el||!S.focus) return;
+    const left=Math.max(0,S.focus.end-Date.now());
+    el.textContent=String(Math.floor(left/60000)).padStart(2,'0')+':'+String(Math.floor(left/1000)%60).padStart(2,'0');
+    if(left<=0){ el.textContent='זמן!'; return; }
+    setTimeout(tick,500);
+  };
+  tick();
+  const end=(done)=>{
+    if(done){ const it=planToday().find(i=>i.text===f.task); if(it) it.done=true; }
+    S.focus=null; save(); try{wake?.release()}catch(e){}
+    if(done) toast('כל הכבוד'); renderHome();
+  };
+  $('#fin').onclick=()=>end(true);
+  $('#stop').onclick=()=>end(false);
+}
+
+/* ---------- home ---------- */
+function renderHome(focusPlan){
+  const items=planToday();
+  while(items.length<3) items.push({text:'',done:false});
+  const r=resistedToday();
+  const editing = focusPlan || !items.some(i=>i.text.trim());
+  app.innerHTML = `
+    <header class="stack" style="gap:6px">
+      <p class="eyebrow">${new Date().toLocaleDateString('he-IL',{weekday:'long',day:'numeric',month:'long'})}</p>
+      <h1>${greeting()}</h1>
+      ${r.n?`<p class="muted">היום כבר ויתרת על הפיד ${r.n} ${r.n===1?'פעם':'פעמים'}.</p>`:''}
+    </header>
+
+    <section class="card" id="planCard">
+      <div class="row" style="justify-content:space-between;align-items:baseline">
+        <h2>שלושה דברים להיום</h2>
+        ${editing?'':'<button class="ghost" id="edit" style="width:auto;padding:4px 0">עריכה</button>'}
+      </div>
+      ${editing ? `
+        <p class="muted small">מה יגרום לך להרגיש בסוף היום שהוא היה שווה? אלה הדברים ששומר הסף יציע לך במקום הפיד.</p>
+        <div class="stack">${items.map((it,i)=>`<input type="text" id="p${i}" value="${esc(it.text)}" placeholder="${['למשל: ללמוד שעה לקראת המבחן','למשל: אימון','למשל: לסדר את החדר'][i]}">`).join('')}</div>
+        <button class="primary" id="savePlan">שמור</button>
+      ` : `
+        <ul class="list">${items.filter(i=>i.text.trim()).map((it)=>`
+          <li><button class="check" role="checkbox" aria-checked="${it.done}" data-t="${esc(it.text)}" aria-label="סמן כבוצע"></button>
+          <span style="flex:1;min-width:0" class="${it.done?'done-text':''}">${esc(it.text)}</span>
+          ${it.done?'':`<button class="ghost start" data-t="${esc(it.text)}" style="width:auto;padding:6px 0;color:var(--accent)">להתחיל</button>`}</li>`).join('')}
+        </ul>
+      `}
+    </section>
+
+    <section class="card">
+      <h2>כשבא לך לגלול</h2>
+      <p class="muted small">שומר הסף יציע אחד מאלה. תוסיף דברים שבאמת עושים לך טוב.</p>
+      <ul class="list">${S.swaps.map((s,i)=>`<li><span style="flex:1;min-width:0">${esc(s)}</span><button class="ghost del" data-i="${i}" style="width:auto;padding:4px 0" aria-label="מחק">הסר</button></li>`).join('')}</ul>
+      <div class="copybox"><input type="text" id="newSwap" placeholder="להוסיף רעיון"><button id="addSwap">הוסף</button></div>
+    </section>
+
+    <section class="card">
+      <h2>שעות לילה</h2>
+      <p class="muted small">בשעות האלה ההמתנה ארוכה יותר, מקסימום 5 דקות כניסה, וצריך להקליד משפט אישור.</p>
+      <div class="row">
+        <label style="flex:1">מ-<input type="time" id="ns" value="${S.settings.nightStart}"></label>
+        <label style="flex:1">עד<input type="time" id="ne" value="${S.settings.nightEnd}"></label>
+      </div>
+    </section>
+
+    ${setupGuide()}
+
+    <section class="stack">
+      <button id="tryGate">לנסות את שומר הסף</button>
+    </section>
+  `;
+  if(editing){
+    $('#savePlan').onclick=()=>{
+      S.plan={date:today(),items:[0,1,2].map(i=>({text:$('#p'+i).value.trim(),done:items[i]&&items[i].text===$('#p'+i).value.trim()?items[i].done:false})).filter(i=>i.text)};
+      save(); toast('התוכנית נשמרה'); renderHome();
+    };
+  } else {
+    $('#edit').onclick=()=>renderHome(true);
+    document.querySelectorAll('.check').forEach(b=>b.onclick=()=>{ const it=planToday().find(i=>i.text===b.dataset.t); it.done=!it.done; save(); renderHome(); });
+    document.querySelectorAll('.start').forEach(b=>b.onclick=()=>startFocus(b.dataset.t));
+  }
+  document.querySelectorAll('.del').forEach(b=>b.onclick=()=>{ S.swaps.splice(+b.dataset.i,1); save(); renderHome(); });
+  $('#addSwap').onclick=()=>{ const v=$('#newSwap').value.trim(); if(!v) return; S.swaps.push(v); save(); renderHome(); };
+  $('#ns').onchange=e=>{ S.settings.nightStart=e.target.value||'22:30'; save(); toast('נשמר'); };
+  $('#ne').onchange=e=>{ S.settings.nightEnd=e.target.value||'07:00'; save(); toast('נשמר'); };
+  $('#tryGate').onclick=()=>{ location.href=location.pathname+'?app=instagram&demo=1'; };
+  document.querySelectorAll('[data-copy]').forEach(b=>b.onclick=async()=>{
+    const txt=b.previousElementSibling.textContent;
+    try{ await navigator.clipboard.writeText(txt); toast('הועתק'); }catch(e){ const r=document.createRange(); r.selectNodeContents(b.previousElementSibling); getSelection().removeAllRanges(); getSelection().addRange(r); }
+  });
+}
+
+function setupGuide(){
+  const base = location.origin + location.pathname;
+  const copy = t => `<div class="copybox"><code>${esc(t)}</code><button data-copy>העתק</button></div>`;
+  return `
+  <details>
+    <summary>הגדרה באייפון (פעם אחת, כ-10 דקות)</summary>
+    <div class="stack" style="gap:18px">
+      <p class="note small">חשוב: תשתמש בעמוד הזה ב-Safari ותשמור אותו כסימנייה. אל תוסיף אותו "למסך הבית", כי אז התוכנית שלך נשמרת במקום אחר והשומר לא יראה אותה.</p>
+
+      <div class="stack">
+        <h3>שלב 1: קיצור בשם FocusAllow</h3>
+        <p class="small muted">זה הקיצור שפותח לך את האפליקציה לזמן שבחרת ומפעיל טיימר.</p>
+        <ol class="steps">
+          <li>פתח את אפליקציית <b>קיצורים</b>, לשונית "קיצורים", לחץ <b>+</b>. קרא לו בדיוק <code>FocusAllow</code>.</li>
+          <li>הוסף פעולה <b>פצל טקסט</b> (Split Text). קלט: <b>קלט הקיצור</b>. מפריד: מותאם אישית, <code>,</code></li>
+          <li>הוסף <b>קבל פריט מרשימה</b> (Get Item from List): הפריט <b>הראשון</b>. לחץ עליו והגדר משתנה בשם <code>App</code> (פעולה <b>הגדר משתנה</b>).</li>
+          <li>שוב <b>קבל פריט מרשימה</b> מתוצאת הפיצול: <b>האחרון</b>. הגדר משתנה בשם <code>Min</code>.</li>
+          <li><b>התאם תאריך</b> (Adjust Date): הוסף <code>Min</code> דקות ל<b>תאריך נוכחי</b>.</li>
+          <li><b>עצב תאריך</b> (Format Date): תבנית <b>ISO 8601</b>, כולל שעה.</li>
+          <li><b>שמור קובץ</b> (Save File): כבה "שאל לאן לשמור", תיקייה <b>Shortcuts</b>, נתיב משנה <code>focus-pass.txt</code>, והדלק <b>החלף אם קיים</b>.</li>
+          <li><b>הפעל טיימר</b> (Start Timer) ל-<code>Min</code> דקות.</li>
+          <li><b>פתח כתובת URL</b> (Open URLs) עם הטקסט: המשתנה <code>App</code> ואחריו <code>://</code></li>
+        </ol>
+      </div>
+
+      <div class="stack">
+        <h3>שלב 2: קיצור בשם FocusGate</h3>
+        <p class="small muted">זה הקיצור שבודק אם יש לך אישור בתוקף, ואם אין, שולח אותך לשומר הסף.</p>
+        <ol class="steps">
+          <li>קיצור חדש בשם <code>FocusGate</code>.</li>
+          <li><b>קבל קובץ</b> (Get File) מתיקייה <b>Shortcuts</b>, נתיב <code>focus-pass.txt</code>. כבה "שגיאה אם לא נמצא".</li>
+          <li><b>קבל תאריכים מהקלט</b> (Get Dates from Input) מהקובץ.</li>
+          <li><b>אם</b> (If): <b>תאריכים</b> <b>אחרי</b> <b>תאריך נוכחי</b>. בחלק הזה לא שמים כלום.</li>
+          <li>בחלק <b>אחרת</b> (Otherwise): <b>פתח כתובת URL</b> עם הכתובת הבאה, ובסוף שלה את <b>קלט הקיצור</b>:
+            ${copy(base+'?app=')}</li>
+        </ol>
+      </div>
+
+      <div class="stack">
+        <h3>שלב 3: שתי אוטומציות</h3>
+        <ol class="steps">
+          <li>לשונית <b>אוטומציה</b>, <b>+</b>, בחר <b>אפליקציה</b> (App). בחר <b>Instagram</b>, סמן <b>נפתחת</b>, ובחר <b>הפעל מיד</b>.</li>
+          <li>פעולה: <b>הפעל קיצור</b> (Run Shortcut), בחר <code>FocusGate</code>, ובקלט שלו כתוב <code>instagram</code></li>
+          <li>חזור על זה עם <b>YouTube</b> וקלט <code>youtube</code></li>
+        </ol>
+      </div>
+
+      <p class="note small">טיפ שמחזק את כל זה: הגדרות, צג וגודל, ובנגישות הפעל <b>מסנני צבע, גווני אפור</b>. מסך אפור הופך את הפיד להרבה פחות מושך. אפשר גם להוציא את אינסטגרם ויוטיוב ממסך הבית לספרייה, ולכבות להם התראות.</p>
+    </div>
+  </details>`;
+}
+
+/* ---------- boot ---------- */
+if(S.focus && S.focus.end>Date.now() && !appKey) renderFocus();
+else if(appKey) gateStart();
+else { if(S.focus && S.focus.end<=Date.now()){ S.focus=null; save(); } renderHome(); }
+</script>
+</body>
+</html>
