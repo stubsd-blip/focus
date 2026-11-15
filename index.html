@@ -123,7 +123,8 @@ const esc = s => String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>'
 const APPS = {instagram:'אינסטגרם', youtube:'יוטיוב'};
 const params = new URLSearchParams(location.search);
 const appKey = (params.get('app')||'').toLowerCase();
-const appName = APPS[appKey] || appKey || 'האפליקציה';
+const appName = APPS[appKey] || 'הפיד';
+const SCHEMES = {instagram:'instagram://app', youtube:'youtube://'};
 function toast(t){ const el=$('#toast'); el.textContent=t; el.hidden=false; clearTimeout(toast.t); toast.t=setTimeout(()=>el.hidden=true,2200); }
 function mins(hhmm){ const [h,m]=hhmm.split(':').map(Number); return h*60+m; }
 function isNight(){
@@ -236,17 +237,20 @@ function renderIntent(){
           <p style="font-weight:700">${NIGHT_PHRASE}</p>
           <input type="text" id="phrase" autocomplete="off" aria-label="משפט אישור">
         </div>`:''}
-      <button class="primary" id="go" disabled style="opacity:.45">בחר סיבה וזמן</button>
+      <div class="stack" id="gos">${(APPS[appKey]?[appKey]:['instagram','youtube']).map(k=>`<button class="primary go" data-app="${k}" disabled style="opacity:.45">בחר סיבה וזמן</button>`).join('')}</div>
       <button class="ghost" id="back">חזרה</button>
-      <p class="muted small center">כשהזמן ייגמר יצלצל טיימר. זה הסימן לצאת.</p>
+      <p class="muted small center">ברגע שתצא מהאפליקציה ותחזור אליה, שומר הסף יחכה לך שוב.</p>
     </section>`;
   let reason=null, t=null;
-  const go=$('#go');
+  const gos=[...document.querySelectorAll('.go')];
   const update=()=>{
     const okPhrase = !night || ($('#phrase').value.trim()===NIGHT_PHRASE);
     const ok = reason && t && okPhrase;
-    go.disabled=!ok; go.style.opacity=ok?1:.45;
-    go.textContent = !reason||!t ? 'בחר סיבה וזמן' : !okPhrase ? 'הקלד את המשפט' : `פתח את ${appName} ל-${t} דקות`;
+    gos.forEach(go=>{
+      go.disabled=!ok; go.style.opacity=ok?1:.45;
+      go.textContent = !reason||!t ? 'בחר סיבה וזמן' : !okPhrase ? 'הקלד את המשפט' : `פתח את ${APPS[go.dataset.app]} ל-${t} דקות`;
+    });
+    if(gos.length>1 && (!reason||!t||!okPhrase)) gos[1].hidden=true; else if(gos[1]) gos[1].hidden=false;
   };
   document.querySelectorAll('#reasons .chip').forEach(b=> b.onclick=()=>{
     document.querySelectorAll('#reasons .chip').forEach(x=>x.setAttribute('aria-pressed','false'));
@@ -267,13 +271,12 @@ function renderIntent(){
   });
   if(night) $('#phrase').oninput=update;
   $('#back').onclick=renderChoice;
-  go.onclick=()=>{
+  gos.forEach(go=> go.onclick=async()=>{
     if(go.disabled) return;
-    const key = APPS[appKey] ? appKey : 'instagram';
-    const url = 'shortcuts://run-shortcut?name=' + encodeURIComponent('FocusAllow') + '&input=text&text=' + encodeURIComponent(key+','+t);
-    location.href = url;
-    setTimeout(()=>{ app.insertAdjacentHTML('beforeend', `<p class="note small">אם לא קרה כלום, הקיצור FocusAllow עוד לא מוגדר. ההוראות נמצאות במסך הבית תחת "הגדרה באייפון".</p>`); }, 2500);
-  };
+    // The automation lets the app open once when it finds this word on the clipboard, then erases it.
+    try{ await navigator.clipboard.writeText('focus-ok'); }catch(e){}
+    location.href = SCHEMES[go.dataset.app];
+  });
   update();
 }
 
@@ -394,49 +397,20 @@ function setupGuide(){
   const copy = t => `<div class="copybox"><code>${esc(t)}</code><button data-copy>העתק</button></div>`;
   return `
   <details>
-    <summary>הגדרה באייפון (פעם אחת, כ-10 דקות)</summary>
+    <summary>הגדרה באייפון (אוטומציה אחת)</summary>
     <div class="stack" style="gap:18px">
-      <p class="note small">חשוב: תשתמש בעמוד הזה ב-Safari ותשמור אותו כסימנייה. אל תוסיף אותו "למסך הבית", כי אז התוכנית שלך נשמרת במקום אחר והשומר לא יראה אותה.</p>
-
-      <div class="stack">
-        <h3>שלב 1: קיצור בשם FocusAllow</h3>
-        <p class="small muted">זה הקיצור שפותח לך את האפליקציה לזמן שבחרת ומפעיל טיימר.</p>
-        <ol class="steps">
-          <li>פתח את אפליקציית <b>קיצורים</b>, לשונית "קיצורים", לחץ <b>+</b>. קרא לו בדיוק <code>FocusAllow</code>.</li>
-          <li>הוסף פעולה <b>פצל טקסט</b> (Split Text). קלט: <b>קלט הקיצור</b>. מפריד: מותאם אישית, <code>,</code></li>
-          <li>הוסף <b>קבל פריט מרשימה</b> (Get Item from List): הפריט <b>הראשון</b>. לחץ עליו והגדר משתנה בשם <code>App</code> (פעולה <b>הגדר משתנה</b>).</li>
-          <li>שוב <b>קבל פריט מרשימה</b> מתוצאת הפיצול: <b>האחרון</b>. הגדר משתנה בשם <code>Min</code>.</li>
-          <li><b>התאם תאריך</b> (Adjust Date): הוסף <code>Min</code> דקות ל<b>תאריך נוכחי</b>.</li>
-          <li><b>עצב תאריך</b> (Format Date): תבנית <b>ISO 8601</b>, כולל שעה.</li>
-          <li><b>שמור קובץ</b> (Save File): כבה "שאל לאן לשמור", תיקייה <b>Shortcuts</b>, נתיב משנה <code>focus-pass.txt</code>, והדלק <b>החלף אם קיים</b>.</li>
-          <li><b>הפעל טיימר</b> (Start Timer) ל-<code>Min</code> דקות.</li>
-          <li><b>פתח כתובת URL</b> (Open URLs) עם הטקסט: המשתנה <code>App</code> ואחריו <code>://</code></li>
-        </ol>
-      </div>
-
-      <div class="stack">
-        <h3>שלב 2: קיצור בשם FocusGate</h3>
-        <p class="small muted">זה הקיצור שבודק אם יש לך אישור בתוקף, ואם אין, שולח אותך לשומר הסף.</p>
-        <ol class="steps">
-          <li>קיצור חדש בשם <code>FocusGate</code>.</li>
-          <li><b>קבל קובץ</b> (Get File) מתיקייה <b>Shortcuts</b>, נתיב <code>focus-pass.txt</code>. כבה "שגיאה אם לא נמצא".</li>
-          <li><b>קבל תאריכים מהקלט</b> (Get Dates from Input) מהקובץ.</li>
-          <li><b>אם</b> (If): <b>תאריכים</b> <b>אחרי</b> <b>תאריך נוכחי</b>. בחלק הזה לא שמים כלום.</li>
-          <li>בחלק <b>אחרת</b> (Otherwise): <b>פתח כתובת URL</b> עם הכתובת הבאה, ובסוף שלה את <b>קלט הקיצור</b>:
-            ${copy(base+'?app=')}</li>
-        </ol>
-      </div>
-
-      <div class="stack">
-        <h3>שלב 3: שתי אוטומציות</h3>
-        <ol class="steps">
-          <li>לשונית <b>אוטומציה</b>, <b>+</b>, בחר <b>אפליקציה</b> (App). בחר <b>Instagram</b>, סמן <b>נפתחת</b>, ובחר <b>הפעל מיד</b>.</li>
-          <li>פעולה: <b>הפעל קיצור</b> (Run Shortcut), בחר <code>FocusGate</code>, ובקלט שלו כתוב <code>instagram</code></li>
-          <li>חזור על זה עם <b>YouTube</b> וקלט <code>youtube</code></li>
-        </ol>
-      </div>
-
-      <p class="note small">טיפ שמחזק את כל זה: הגדרות, צג וגודל, ובנגישות הפעל <b>מסנני צבע, גווני אפור</b>. מסך אפור הופך את הפיד להרבה פחות מושך. אפשר גם להוציא את אינסטגרם ויוטיוב ממסך הבית לספרייה, ולכבות להם התראות.</p>
+      <p class="note small">תשתמש בעמוד הזה ב-Safari ותשמור אותו כסימנייה, לא "במסך הבית".</p>
+      <ol class="steps">
+        <li>באפליקציית <b>קיצורים</b>, לשונית <b>אוטומציה</b>, לחץ <b>+</b>.</li>
+        <li>בחר <b>אפליקציה</b>. סמן את <b>Instagram</b> ואת <b>YouTube</b>, סמן <b>נפתחת</b>, ובחר <b>הפעל מיד</b>. לחץ <b>הבא</b> ואז <b>אוטומציה ריקה</b>.</li>
+        <li>הוסף פעולה: חפש <code>לוח</code> ובחר <b>קבל לוח</b>.</li>
+        <li>הוסף פעולה: חפש <code>אם</code> ובחר <b>אם</b>. הגדר: <b>לוח</b>, <b>אינו מכיל</b>, והקלד <code>focus-ok</code></li>
+        <li>הוסף פעולה: <b>פתח כתובות URL</b> עם הכתובת הזו, וגרור אותה כך שתהיה <b>בתוך</b> ה"אם":
+          ${copy(base+"?app=gate")}</li>
+        <li>הוסף פעולה אחרונה: <b>העתק ללוח</b>, עם הטקסט <code>-</code> (היא נשארת בסוף, אחרי "סיום אם").</li>
+      </ol>
+      <p class="small muted">איך זה עובד: כשאתה פותח אינסטגרם או יוטיוב, האוטומציה שולחת אותך לכאן. כשאתה בוחר להיכנס, העמוד משאיר בלוח את המילה focus-ok, והאוטומציה נותנת לאפליקציה להיפתח פעם אחת ומוחקת אותה.</p>
+      <p class="note small">טיפ שמחזק את כל זה: הגדרות, נגישות, צג וגודל טקסט, <b>מסנני צבע</b>, <b>גווני אפור</b>. מסך אפור הופך את הפיד להרבה פחות מושך.</p>
     </div>
   </details>`;
 }
