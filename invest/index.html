@@ -1,0 +1,1225 @@
+<!doctype html><html lang="he" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="apple-mobile-web-app-capable" content="yes"><style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}[hidden]{display:none!important}img{max-width:100%}</style>
+<title>מצפן ההשקעות</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="theme-color" content="#f3f6f4">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Rubik:wght@500;600;700&family=Heebo:wght@400;500;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: an app shell. Side rail on desktop, bottom tab bar on phones; one view at a time, summary before detail. */
+:root{
+  --bg:#f3f6f4;          /* ledger paper with a green bias */
+  --surface:#ffffff;
+  --sunk:#e8eeea;
+  --line:#d5dfd9;
+  --fg:#13201b;
+  --muted:#5b6b64;
+  --accent:#0d6b4d;      /* growth green, primary actions */
+  --accent-soft:#dcefe6;
+  --accent-ink:#ffffff;
+  --gold:#a8741a;        /* highlights, "important" */
+  --gold-soft:#f6ecd6;
+  --gain:#137a4b;
+  --loss:#b4332b;
+  --loss-soft:#f8e1de;
+  --c1:#0d6b4d; --c2:#3a8fb7; --c3:#c08a2c; --c4:#8a6bb8; --c5:#7c8b85; --c6:#c45c4a;
+  --display:"Rubik",system-ui,sans-serif;
+  --body:"Heebo",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:14px;
+  --shadow:0 1px 2px rgba(19,32,27,.06),0 4px 16px rgba(19,32,27,.05);
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0d1412;--surface:#151f1c;--sunk:#101917;--line:#25332f;--fg:#e6eee9;--muted:#93a49d;
+  --accent:#4cc79a;--accent-soft:#173a2e;--accent-ink:#06140e;--gold:#e0b259;--gold-soft:#3a2f17;
+  --gain:#5fd3a2;--loss:#f08a7e;--loss-soft:#3d1f1b;
+  --c1:#4cc79a;--c2:#6bb6dc;--c3:#e0b259;--c4:#b39ae0;--c5:#8d9c96;--c6:#ec8b78;
+  --shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0d1412;--surface:#151f1c;--sunk:#101917;--line:#25332f;--fg:#e6eee9;--muted:#93a49d;
+  --accent:#4cc79a;--accent-soft:#173a2e;--accent-ink:#06140e;--gold:#e0b259;--gold-soft:#3a2f17;
+  --gain:#5fd3a2;--loss:#f08a7e;--loss-soft:#3d1f1b;
+  --c1:#4cc79a;--c2:#6bb6dc;--c3:#e0b259;--c4:#b39ae0;--c5:#8d9c96;--c6:#ec8b78;
+  --shadow:0 1px 2px rgba(0,0,0,.3);color-scheme:dark}
+
+*{box-sizing:border-box}
+html{direction:rtl}
+body{margin:0;background:var(--bg);color:var(--fg);font:400 16px/1.65 var(--body);-webkit-font-smoothing:antialiased}
+h1,h2,h3,h4{font-family:var(--display);line-height:1.25;margin:0;text-wrap:balance;font-weight:600}
+h1{font-size:clamp(1.6rem,4.5vw,2.2rem)}
+h2{font-size:1.35rem}
+h3{font-size:1.08rem}
+p{margin:0}
+a{color:var(--accent)}
+.num{font-family:var(--mono);font-variant-numeric:tabular-nums;direction:ltr;unicode-bidi:isolate}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* shell */
+.shell{display:grid;grid-template-columns:240px minmax(0,1fr);min-height:100vh}
+.rail{position:sticky;top:0;height:100vh;padding:24px 16px;border-left:1px solid var(--line);background:var(--surface);display:flex;flex-direction:column;gap:6px}
+.brand{display:flex;align-items:center;gap:10px;padding:4px 8px 18px}
+.brand svg{flex:none}
+.brand b{font-family:var(--display);font-size:1.15rem;font-weight:700}
+.brand small{display:block;color:var(--muted);font-size:.78rem;line-height:1.2}
+.nav a{display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;color:var(--fg);text-decoration:none;font-weight:500}
+.nav a svg{width:20px;height:20px;flex:none;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.nav a:hover{background:var(--sunk)}
+.nav a[aria-current="page"]{background:var(--accent-soft);color:var(--accent)}
+.rail .foot{margin-top:auto;font-size:.78rem;color:var(--muted);padding:8px}
+main{min-width:0;padding-block:28px 96px;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.view{max-width:980px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+.tabbar{display:none}
+
+@media (max-width:860px){
+  .shell{display:block}
+  .rail{display:none}
+  main{padding-block:16px 110px}
+  .tabbar{display:flex;position:fixed;inset:auto 0 0 0;z-index:20;background:var(--surface);border-top:1px solid var(--line);
+    padding:6px max(4px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(4px,env(safe-area-inset-left,0px));justify-content:space-around}
+  .tabbar a{flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;padding:6px 2px;color:var(--muted);text-decoration:none;font-size:.7rem;border-radius:10px;min-width:0}
+  .tabbar a svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+  .tabbar a[aria-current="page"]{color:var(--accent);font-weight:700}
+  .mtop{display:flex}
+}
+.mtop{display:none;align-items:center;justify-content:space-between;gap:10px;margin:0 auto 12px;max-width:980px}
+.mtop .brand{padding:0}
+
+/* building blocks */
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:20px;box-shadow:var(--shadow);min-width:0}
+.card.flat{box-shadow:none}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:860px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:560px){.g2,.g3{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:12px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.muted{color:var(--muted)}
+.small{font-size:.86rem}
+.eyebrow{font-size:.74rem;letter-spacing:.06em;color:var(--muted);font-weight:700}
+.lead{font-size:1.06rem;color:var(--muted);max-width:68ch}
+.prose{max-width:70ch;display:flex;flex-direction:column;gap:10px}
+.prose ul,.prose ol{margin:0;padding-inline-start:1.25em;display:flex;flex-direction:column;gap:4px}
+
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;border:1px solid var(--line);background:var(--surface);padding:9px 16px;border-radius:10px;cursor:pointer;font-weight:500;text-decoration:none;color:var(--fg);min-height:42px}
+.btn:hover{background:var(--sunk)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn.primary:hover{filter:brightness(1.07)}
+.btn.ghost{border-color:transparent;background:transparent}
+.btn.danger{color:var(--loss)}
+.btn.sm{padding:5px 10px;min-height:34px;font-size:.88rem}
+
+.pill{display:inline-flex;align-items:center;gap:6px;padding:2px 10px;border-radius:99px;font-size:.78rem;font-weight:700;background:var(--sunk);color:var(--muted);white-space:nowrap}
+.pill.good{background:var(--accent-soft);color:var(--accent)}
+.pill.warn{background:var(--gold-soft);color:var(--gold)}
+.pill.bad{background:var(--loss-soft);color:var(--loss)}
+
+.disclaimer{display:flex;gap:12px;align-items:flex-start;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 35%,transparent);color:var(--fg);border-radius:var(--r);padding:12px 16px;font-size:.9rem}
+.disclaimer svg{flex:none;margin-top:3px;stroke:var(--gold);fill:none;stroke-width:2}
+.note{border-inline-start:3px solid var(--accent);background:var(--accent-soft);padding:10px 14px;border-radius:8px;font-size:.94rem}
+.note.gold{border-color:var(--gold);background:var(--gold-soft)}
+.note.red{border-color:var(--loss);background:var(--loss-soft)}
+
+/* KPI tiles */
+.kpi{display:flex;flex-direction:column;gap:4px}
+.kpi .v{font-family:var(--mono);font-size:1.45rem;font-weight:500;direction:ltr;text-align:right;unicode-bidi:isolate;font-variant-numeric:tabular-nums}
+.kpi .s{font-size:.82rem}
+.up{color:var(--gain)} .down{color:var(--loss)}
+
+/* hero */
+.hero{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr);gap:20px;align-items:stretch}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr)}}
+.hero .card.main{background:linear-gradient(160deg,var(--accent-soft),var(--surface) 70%);display:flex;flex-direction:column;gap:14px}
+.ring{position:relative;width:120px;height:120px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring b{position:absolute;inset:0;display:grid;place-items:center;font-family:var(--display);font-size:1.6rem}
+
+/* path timeline */
+.steps{display:flex;flex-direction:column;gap:0;counter-reset:s}
+.step{display:grid;grid-template-columns:44px minmax(0,1fr);gap:14px;position:relative;padding-bottom:18px}
+.step::before{content:"";position:absolute;inset-inline-start:21px;top:44px;bottom:0;width:2px;background:var(--line)}
+.step:last-child::before{display:none}
+.step .dot{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-weight:700;background:var(--surface);border:2px solid var(--line);color:var(--muted)}
+.step.done .dot{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.step .body{min-width:0}
+.step details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.step summary{list-style:none;cursor:pointer;padding:12px 16px;display:flex;gap:10px;align-items:center;justify-content:space-between}
+.step summary::-webkit-details-marker{display:none}
+.step summary h3{flex:1}
+.step .content{padding:0 16px 16px;display:flex;flex-direction:column;gap:12px}
+.chev{transition:transform .2s;flex:none;stroke:var(--muted);fill:none;stroke-width:2}
+details[open]>summary .chev{transform:rotate(180deg)}
+
+/* accordion (learn) */
+.acc details{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+.acc summary{list-style:none;cursor:pointer;padding:14px 16px;display:flex;gap:12px;align-items:center}
+.acc summary::-webkit-details-marker{display:none}
+.acc summary .ic{width:38px;height:38px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;flex:none;font-family:var(--display);font-weight:700}
+.acc summary .t{flex:1;min-width:0}
+.acc summary .t small{display:block;color:var(--muted);font-size:.84rem}
+.acc .content{padding:0 16px 18px;display:flex;flex-direction:column;gap:12px}
+.oneliner{font-weight:700;color:var(--accent)}
+
+/* tables */
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:var(--r);background:var(--surface)}
+table{border-collapse:collapse;width:100%;font-size:.92rem}
+th,td{padding:10px 12px;text-align:right;border-bottom:1px solid var(--line);vertical-align:top}
+th{font-size:.78rem;color:var(--muted);font-weight:700;background:var(--sunk);white-space:nowrap}
+tr:last-child td{border-bottom:none}
+td:first-child{min-width:130px}
+td.n{font-family:var(--mono);font-variant-numeric:tabular-nums;white-space:nowrap;direction:ltr;text-align:left}
+
+/* forms */
+.form{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}
+@media (max-width:760px){.form{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.field{display:flex;flex-direction:column;gap:4px;min-width:0}
+.field.wide{grid-column:span 2}
+.field label{font-size:.8rem;color:var(--muted);font-weight:500}
+.field input,.field select,.field textarea{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:9px 11px;min-height:42px;width:100%}
+.field textarea{min-height:120px;font-family:var(--mono);font-size:.8rem;direction:ltr}
+input[type="range"]{accent-color:var(--accent)}
+
+/* checklists */
+.checks{display:flex;flex-direction:column;gap:2px}
+.check{display:flex;gap:12px;align-items:flex-start;padding:10px 8px;border-radius:10px;cursor:pointer}
+.check:hover{background:var(--sunk)}
+.check input{appearance:none;width:22px;height:22px;border:2px solid var(--line);border-radius:6px;flex:none;margin-top:2px;display:grid;place-items:center;cursor:pointer;background:var(--surface)}
+.check input:checked{background:var(--accent);border-color:var(--accent)}
+.check input:checked::after{content:"";width:6px;height:11px;border:solid var(--accent-ink);border-width:0 2.5px 2.5px 0;transform:rotate(45deg) translate(-1px,-1px)}
+.check input:checked + span{color:var(--muted);text-decoration:line-through}
+.check span small{display:block;color:var(--muted);text-decoration:none;font-size:.84rem}
+
+/* quiz */
+.q{display:flex;flex-direction:column;gap:10px}
+.opts{display:grid;gap:8px}
+.opt{display:flex;gap:10px;align-items:center;padding:12px 14px;border:1.5px solid var(--line);border-radius:12px;cursor:pointer;background:var(--surface)}
+.opt:hover{border-color:var(--accent)}
+.opt input{accent-color:var(--accent);width:18px;height:18px;flex:none}
+.opt:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.bar{height:8px;border-radius:99px;background:var(--sunk);overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:99px;transition:width .3s}
+
+/* allocation bars */
+.alloc{display:flex;height:34px;border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+.alloc span{display:grid;place-items:center;font-size:.78rem;font-weight:700;color:#fff;min-width:0;overflow:hidden;white-space:nowrap}
+.legend{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:.86rem}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-inline-end:6px;vertical-align:middle}
+
+/* charts */
+.chart{width:100%;direction:ltr}
+.chart svg{display:block;width:100%;height:auto;overflow:visible}
+.chart text{fill:var(--muted);font:500 13px var(--body)}
+.donutwrap{display:flex;gap:20px;align-items:center;flex-wrap:wrap}
+.donutwrap .chart{width:180px;flex:none}
+
+/* compare table option cards */
+.optcards{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:12px}
+.optcard{border:1px solid var(--line);border-radius:var(--r);padding:16px;background:var(--surface);display:flex;flex-direction:column;gap:8px}
+.optcard ul{margin:0;padding-inline-start:1.1em;font-size:.9rem;display:flex;flex-direction:column;gap:3px}
+.pro{color:var(--gain)} .con{color:var(--loss)}
+
+.glossary{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px}
+.term{padding:12px 14px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+.term b{font-family:var(--display);display:block}
+
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.45);display:grid;place-items:center;z-index:50;padding:16px}
+.modal .card{width:min(640px,100%);max-height:90vh;overflow:auto}
+.toast{position:fixed;bottom:calc(90px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--fg);color:var(--bg);padding:10px 18px;border-radius:99px;z-index:60;font-size:.9rem;box-shadow:var(--shadow)}
+.sectionhead{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1.5px dashed var(--line);border-radius:var(--r)}
+.demo-banner{display:flex;gap:10px;align-items:center;justify-content:space-between;flex-wrap:wrap;background:var(--sunk);border:1px dashed var(--line);padding:10px 14px;border-radius:12px;font-size:.9rem}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head><body>
+<div class="shell">
+  <aside class="rail" aria-label="ניווט">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--accent)" stroke-width="2.5"/><path d="M17 6 L21 17 L17 28 L13 17 Z" fill="var(--accent)"/><circle cx="17" cy="17" r="2.4" fill="var(--surface)"/></svg>
+      <div><b>מצפן ההשקעות</b><small>מדריך ויומן למשקיע המתחיל</small></div>
+    </div>
+    <nav class="nav" id="railnav"></nav>
+    <div class="foot">כלי לימודי בלבד. אינו ייעוץ השקעות.<br><span id="syncstate">נשמר במכשיר זה</span></div>
+  </aside>
+  <main>
+    <div class="mtop">
+      <div class="brand">
+        <svg width="28" height="28" viewBox="0 0 34 34" aria-hidden="true"><circle cx="17" cy="17" r="15" fill="none" stroke="var(--accent)" stroke-width="2.5"/><path d="M17 6 L21 17 L17 28 L13 17 Z" fill="var(--accent)"/><circle cx="17" cy="17" r="2.4" fill="var(--surface)"/></svg>
+        <b>מצפן ההשקעות</b>
+      </div>
+      <span class="pill" id="syncstate2">נשמר במכשיר</span>
+    </div>
+    <div class="view" id="app"></div>
+  </main>
+</div>
+<nav class="tabbar" id="tabbar" aria-label="ניווט"></nav>
+<div id="modalroot"></div>
+<script>
+/* ===== Content: everything the app teaches. Numbers that change over time are marked "לבדוק". ===== */
+const LEARN = [
+  { id:"why", ic:"1", t:"למה להשקיע בכלל?", s:"אינפלציה, זמן, וכסף שעובד בשבילך",
+    one:"כסף שיושב בעו״ש מאבד ערך כל שנה. השקעה נכונה לטווח ארוך נועדה לשמור על הערך ולהצמיח אותו.",
+    body:`<p>אם האינפלציה היא 3% בשנה, 100,000 ₪ בעו״ש יקנו בעוד 10 שנים רק מה שכ-74,000 ₪ קונים היום. השקעה היא דרך לתת לכסף לגדול מהר יותר מהמחירים.</p>
+    <p>אבל השקעה היא לא חיסכון בבנק: הערך עולה ויורד, לפעמים בחדות. לכן משקיעים רק כסף שלא צריך בשנים הקרובות, ורק אחרי שיש כרית ביטחון.</p>
+    <div class="note">הכלל הראשון: כסף שתצטרך בתוך 3 שנים לא הולך למניות.</div>` },
+  { id:"stock", ic:"2", t:"מניה", s:"חתיכה קטנה מחברה",
+    one:"מניה = בעלות חלקית בחברה. מרוויחים כשהחברה גדלה (עליית מחיר) ולפעמים מדיבידנד.",
+    body:`<p>כשקונים מניה של חברה, הופכים לשותף קטן בה. אם החברה מצליחה, המניה בדרך כלל עולה. אם נכשלת, המניה יכולה לרדת מאוד ואפילו להתאפס.</p>
+    <p><b>למה מתחילים לא בוחרים מניות בודדות?</b> כי גם מקצוענים מתקשים לנחש איזו חברה תצליח. מניה אחת יכולה לרדת 70% ולא לחזור. הפתרון הוא לקנות הרבה חברות יחד, דרך קרן מחקה מדד (ראה בהמשך).</p>
+    <p><b>דיבידנד</b> הוא חלק מהרווח שהחברה מחלקת לבעלי המניות. בישראל הוא ממוסה ב-25%.</p>` },
+  { id:"bond", ic:"3", t:"אג״ח (אגרות חוב)", s:"הלוואה שאתה נותן למדינה או לחברה",
+    one:"אג״ח = אתה המלווה. תנודתי פחות ממניות, ומרוויח פחות לאורך זמן. משמש לייצוב התיק.",
+    body:`<p>כשקונים אג״ח, מלווים כסף למדינה (אג״ח ממשלתי) או לחברה (אג״ח קונצרני) ומקבלים ריבית. אג״ח ממשלתי של ישראל או ארה״ב נחשב בטוח יחסית.</p>
+    <p>במשבר במניות, אג״ח ממשלתי לרוב יורד פחות, ולכן מחזיק התיק יציב יותר. ככל שהטווח שלך קצר יותר או שאתה רגיש יותר לירידות, החלק של אג״ח בתיק גדול יותר.</p>
+    <ul><li><b>צמוד מדד</b>: הקרן מוגנת מאינפלציה בישראל.</li><li><b>שקלי</b>: ריבית קבועה, בלי הצמדה.</li><li><b>קונצרני</b>: ריבית גבוהה יותר תמורת סיכון שהחברה לא תחזיר.</li></ul>` },
+  { id:"index", ic:"4", t:"מדד", s:"S&P 500, MSCI World, ת״א 125 ועוד",
+    one:"מדד הוא רשימה קבועה של חברות. קרן שעוקבת אחרי מדד קונה את כולן בבת אחת.",
+    body:`<p>מדד הוא כמו ״סל קניות״ מוגדר של חברות, עם כללים ברורים מי נכנס ובאיזה משקל. אי אפשר לקנות מדד ישירות, אבל אפשר לקנות קרן שמחקה אותו.</p>
+    <div class="tablewrap"><table>
+      <thead><tr><th>מדד</th><th>מה יש בו</th><th>פיזור</th><th>שים לב</th></tr></thead>
+      <tbody>
+      <tr><td><b>S&amp;P 500</b></td><td>כ-500 החברות הגדולות בארה״ב</td><td>טוב, אבל מדינה אחת</td><td>המדד הפופולרי בעולם. כ-30% ממנו בכמה חברות טכנולוגיה ענקיות.</td></tr>
+      <tr><td><b>MSCI World</b></td><td>כ-1,400 חברות ב-23 מדינות מפותחות</td><td>רחב מאוד</td><td>כ-70% ממנו ארה״ב בכל זאת. כולל אירופה, יפן, קנדה ועוד.</td></tr>
+      <tr><td><b>MSCI ACWI / FTSE All-World</b></td><td>העולם כולו, כולל שווקים מתעוררים</td><td>הרחב ביותר</td><td>״לקנות את כל העולם״ בקרן אחת.</td></tr>
+      <tr><td><b>נאסד״ק 100</b></td><td>100 חברות גדולות בנאסד״ק, בעיקר טכנולוגיה</td><td>מרוכז</td><td>תנודתי יותר. לא מתאים כהשקעה יחידה למתחיל.</td></tr>
+      <tr><td><b>ת״א 125</b></td><td>125 החברות הגדולות בבורסה בתל אביב</td><td>ישראל בלבד</td><td>הרבה בנקים ונדל״ן. מתאים כחלק קטן בתיק.</td></tr>
+      <tr><td><b>ת״א 35</b></td><td>35 הגדולות בישראל</td><td>מרוכז</td><td>חלק מת״א 125.</td></tr>
+      </tbody></table></div>
+    <p class="small muted">המספרים בטבלה מקורבים ומשתנים עם הזמן.</p>` },
+  { id:"funds", ic:"5", t:"קרן מחקה מול קרן סל (ETF)", s:"שתי דרכים לקנות מדד",
+    one:"שתיהן קונות מדד בשבילך. ההבדל העיקרי: איך ומתי קונים, וכמה זה עולה.",
+    body:`<div class="tablewrap"><table>
+      <thead><tr><th></th><th>קרן נאמנות מחקה</th><th>קרן סל (ETF)</th></tr></thead>
+      <tbody>
+      <tr><td><b>מסחר</b></td><td>פעם ביום, במחיר של סוף היום</td><td>כמו מניה, לאורך כל יום המסחר</td></tr>
+      <tr><td><b>עמלת קנייה</b></td><td>אצל רוב הגופים אין עמלת קנייה (העלות כלולה בדמי הניהול)</td><td>משלמים עמלת קנייה ומכירה לברוקר</td></tr>
+      <tr><td><b>דמי ניהול</b></td><td>בדרך כלל מעט גבוהים יותר</td><td>לרוב נמוכים מאוד</td></tr>
+      <tr><td><b>הוראת קבע חודשית</b></td><td>נוח מאוד, אפשר לקנות בכל סכום</td><td>תלוי בברוקר, קונים יחידות שלמות</td></tr>
+      <tr><td><b>מתאים ל</b></td><td>הפקדות חודשיות קטנות ובינוניות</td><td>סכומים גדולים יותר, ומי שרוצה עלות מינימלית</td></tr>
+      </tbody></table></div>
+    <h4>מושגים שתראה בשם של קרן</h4>
+    <ul>
+      <li><b>מנוטרלת מט״ח / חשיפה שקלית</b>: הקרן מגדרת את הדולר, כך שתנודות שער הדולר לא משפיעות כמעט.</li>
+      <li><b>חשיפה מטבעית / לא מנוטרלת</b>: התשואה שלך בשקלים תושפע גם משער הדולר.</li>
+      <li><b>צוברת (Accumulating)</b>: הדיבידנדים מושקעים מחדש בתוך הקרן. נוח וחוסך מס בזמן אמת.</li>
+      <li><b>מחלקת (Distributing)</b>: הדיבידנדים יוצאים אליך וממוסים.</li>
+      <li><b>קרנות סל זרות שמאוגדות באירלנד (UCITS)</b>: משקיעים ישראלים רבים מעדיפים אותן על פני קרנות אמריקאיות, בגלל חיסכון במס על דיבידנדים ובגלל חשיפה למס עיזבון אמריקאי מעל 60,000$. זה נושא לבדוק עם יועץ מס אם משקיעים בחו״ל.</li>
+    </ul>` },
+  { id:"active", ic:"6", t:"פסיבי מול אקטיבי", s:"למה רוב המתחילים מתחילים במדד",
+    one:"רוב מנהלי הקרנות האקטיביות לא מצליחים לנצח את המדד לאורך זמן, אחרי דמי ניהול.",
+    body:`<p><b>קרן אקטיבית</b>: מנהל בוחר מניות ומנסה לנצח את השוק. גובה דמי ניהול גבוהים יותר.</p>
+    <p><b>קרן פסיבית (מחקה)</b>: פשוט קונה את כל המדד. זולה, שקופה, ולא תלויה בכישרון של אדם אחד.</p>
+    <p>מחקרים שמתפרסמים כל שנה (כמו דוחות SPIVA) מראים שלאורך 15 שנה, רוב גדול של הקרנות האקטיביות בארה״ב מפגרות אחרי המדד שלהן. זו הסיבה שהאפליקציה הזו מתמקדת בקרנות מחקות מדד רחב ובעלות נמוכה.</p>` },
+  { id:"fees", ic:"7", t:"עמלות ודמי ניהול", s:"הדבר היחיד שבאמת בשליטתך",
+    one:"0.9% בשנה נשמע קטן. על פני 30 שנה זה יכול לאכול רבע מהכסף. תמיד לבדוק עלויות.",
+    body:`<ul>
+      <li><b>דמי ניהול</b>: אחוז שנתי מהסכום, שהקרן גובה אוטומטית. בקרן מחקה זולה: בערך 0%–0.3%. בקרן אקטיבית: לרוב 0.7%–1.5% ומעלה.</li>
+      <li><b>עמלת קנייה/מכירה</b>: מה שהברוקר גובה על כל פעולה. שים לב ל״עמלת מינימום״ שהופכת קניות קטנות ליקרות.</li>
+      <li><b>דמי משמרת</b>: דמי החזקה חודשיים על ניירות ערך בחשבון. בבנקים זה עלול להיות משמעותי. אצל ברוקרים עצמאיים רבים זה 0 או נמוך.</li>
+      <li><b>עמלת המרת מט״ח</b>: כשקונים בדולרים. גם מרווח השער (ספרד) הוא עלות נסתרת.</li>
+      <li><b>דמי ניהול בקופות</b>: בגמל, השתלמות ופנסיה יש דמי ניהול מצבירה ומהפקדה. אפשר ורצוי להתמקח.</li>
+      <li><b>מרווח (Spread)</b>: הפער בין מחיר הקנייה למכירה בקרן סל. בקרנות גדולות הוא זניח.</li>
+    </ul>
+    <div class="note gold">במחשבון בלשונית ״מחשבון״ אפשר לראות בדיוק כמה דמי ניהול עולים לך לאורך השנים.</div>
+    <p class="small muted">הטווחים כאן אופייניים בלבד. מחירים משתנים, תמיד לבדוק את המחירון העדכני באתר של כל גוף.</p>` },
+  { id:"risk", ic:"8", t:"סיכון ותנודתיות", s:"ירידות הן חלק מהדרך",
+    one:"השוק יורד חזק מדי כמה שנים. מי שמוכר בפאניקה הופך הפסד זמני להפסד אמיתי.",
+    body:`<p>מדדי מניות רחבים ירדו בעבר בחדות. כמה דוגמאות מקורבות ל-S&amp;P 500:</p>
+    <div class="tablewrap"><table><thead><tr><th>אירוע</th><th>ירידה מהשיא</th><th>זמן חזרה לשיא</th></tr></thead><tbody>
+      <tr><td>בועת הדוט-קום (2000–2002)</td><td class="n">≈ −49%</td><td>כ-7 שנים</td></tr>
+      <tr><td>המשבר הפיננסי (2007–2009)</td><td class="n">≈ −57%</td><td>כ-5.5 שנים</td></tr>
+      <tr><td>קורונה (2020)</td><td class="n">≈ −34%</td><td>כ-5 חודשים</td></tr>
+      <tr><td>2022 (אינפלציה וריבית)</td><td class="n">≈ −25%</td><td>כשנתיים</td></tr>
+    </tbody></table></div>
+    <p>לאורך עשרות שנים, השוק האמריקאי החזיר בממוצע כ-7% בשנה מעל האינפלציה, אבל <b>אין שום הבטחה שזה יחזור</b>, ויש תקופות ארוכות של קיפאון.</p>
+    <div class="note red">שאלה לפני שמשקיעים: אם התיק שלך יירד ב-30% בתוך חודשיים, האם תוכל לישון בלילה ולא למכור? אם לא, הגדל את החלק של אג״ח ומזומן.</div>` },
+  { id:"div", ic:"9", t:"פיזור", s:"לא לשים את כל הביצים בסל אחד",
+    one:"פיזור על אלפי חברות, מדינות וסוגי נכסים מקטין מאוד את הסיכון שמשהו אחד יפיל את הכל.",
+    body:`<p>פיזור נכון הוא לא ״הרבה קרנות״, אלא חשיפה לסוגים שונים: הרבה חברות, הרבה מדינות, מניות ואג״ח.</p>
+    <p>טעות נפוצה: לקנות 5 קרנות שכולן מחקות S&amp;P 500, או גם S&amp;P 500 וגם נאסד״ק. זה נראה מפוזר אבל זה כמעט אותו דבר.</p>
+    <p>תיק פשוט ומפוזר היטב יכול להיות 2–3 קרנות בלבד: מניות עולם, קצת ישראל, ואג״ח.</p>` },
+  { id:"compound", ic:"10", t:"ריבית דריבית", s:"הכוח של זמן",
+    one:"הרווחים מרוויחים בעצמם. לכן הזמן חשוב יותר מהסכום, ולהתחיל מוקדם עדיף.",
+    body:`<p>אם 10,000 ₪ צומחים ב-6% בשנה: אחרי 10 שנים הם כ-17,900 ₪, אחרי 20 שנה כ-32,000 ₪, ואחרי 30 שנה כ-57,400 ₪. החלק הגדול של הצמיחה מגיע בשנים המאוחרות.</p>
+    <p>זה גם עובד הפוך: דמי ניהול גבוהים ״מתרבים״ באותה צורה ואוכלים חלק גדל מהכסף.</p>
+    <p><a href="#calc">לפתוח את המחשבון ←</a></p>` },
+  { id:"long", ic:"11", t:"טווח ארוך מול מסחר", s:"למה ״לקנות ולשכוח״ עובד",
+    one:"מסחר יומי מפסיד לרוב האנשים. השקעה חודשית קבועה במדד ולשכוח היא הדרך הפשוטה והמוכחת.",
+    body:`<ul>
+      <li>מחקרים על סוחרים יומיים מראים שרובם הגדול מפסידים כסף לאורך זמן.</li>
+      <li>כל קנייה ומכירה עולה עמלה ומס, ואלה מצטברים.</li>
+      <li>כמה מהימים הטובים ביותר בשוק מגיעים מיד אחרי הגרועים. מי שיוצא ״לחכות״ מפספס אותם.</li>
+      <li><b>הפקדה חודשית קבועה (DCA)</b>: משקיעים סכום קבוע כל חודש, בלי לנסות לנחש. כשהשוק נמוך קונים יותר יחידות.</li>
+    </ul>` },
+  { id:"tax", ic:"12", t:"מיסוי בישראל", s:"25%, קיזוז הפסדים, והטבות מס",
+    one:"על רווח ממכירה משלמים 25% מס רווח הון. בקרן השתלמות ובקופת גמל להשקעה יש הטבות מס.",
+    body:`<ul>
+      <li><b>מס רווח הון: 25%</b> על הרווח הריאלי כשמוכרים (על נכסים בשקלים, רק על הרווח מעל האינפלציה). רק כשמוכרים, לא כל עוד מחזיקים.</li>
+      <li><b>דיבידנד</b>: 25%.</li>
+      <li><b>מס יסף</b>: בעלי הכנסות גבוהות משלמים תוספת מעל תקרה שנתית (לבדוק את התקרה והשיעור העדכניים).</li>
+      <li><b>קיזוז הפסדים</b>: הפסד ממכירה אחת מקזז רווח ממכירה אחרת באותה שנה, ואפשר להעביר הפסד לשנים הבאות.</li>
+      <li><b>ברוקר ישראלי</b>: מנכה את המס אוטומטית ושולח בתחילת השנה <b>טופס 867</b>.</li>
+      <li><b>ברוקר זר</b>: אין ניכוי אוטומטי. אתה חייב בדיווח שנתי לרשות המסים ולשלם בעצמך. זה דורש סדר, ולפעמים רואה חשבון.</li>
+    </ul>
+    <h4>אפיקים עם הטבת מס</h4>
+    <ul>
+      <li><b>קרן השתלמות</b>: לשכירים, המעסיק מפקיד בדרך כלל 7.5% והעובד 2.5% (אם זה בהסכם). אחרי 6 שנים אפשר למשוך את הכסף <b>בלי מס רווח הון</b> (עד תקרת שכר). זה כנראה מכשיר ההשקעה הכי משתלם לשכיר. גם לעצמאים יש מסלול.</li>
+      <li><b>קופת גמל להשקעה</b>: מפקידים עד תקרה שנתית (כ-80 אלף ₪, מתעדכנת). אפשר למשוך בכל עת ולשלם 25% על הרווח, או לחכות לגיל 60 ולמשוך כקצבה פטורה ממס. אפשר להחליף מסלול בלי ״אירוע מס״.</li>
+      <li><b>פנסיה</b>: חובה לשכירים. שווה לבדוק את דמי הניהול ואת מסלול ההשקעה, זה כסף גדול לאורך שנים.</li>
+    </ul>
+    <p class="small muted">כללי מיסוי משתנים. לפני החלטה משמעותית כדאי לבדוק באתר רשות המסים או עם רואה חשבון / יועץ מס.</p>` },
+  { id:"fx", ic:"13", t:"חשיפה למטבע", s:"דולר, שקל, ומה זה עושה לתשואה",
+    one:"כשמשקיעים בחו״ל, התשואה בשקלים תלויה גם בשער הדולר, שיכול לעזור או להזיק.",
+    body:`<p>נניח שה-S&amp;P 500 עלה 10% בשנה, אבל הדולר ירד 8% מול השקל. בשקלים הרווחת רק כ-1%. ולהפך: אם הדולר מתחזק, הרווח בשקלים גדל.</p>
+    <ul>
+      <li><b>קרן מנוטרלת מט״ח</b>: מבטלת כמעט את השפעת המטבע. יציבה יותר בשקלים, עם עלות גידור קטנה.</li>
+      <li><b>קרן עם חשיפה מטבעית</b>: מתאימה למי שרוצה גם פיזור מטבעי. הרבה משקיעים לטווח ארוך מעדיפים חשיפה חלקית.</li>
+    </ul>
+    <p>אין תשובה אחת נכונה. פתרון פשוט: חלק מנוטרל וחלק לא, או להחליט פעם אחת ולהיצמד.</p>` },
+  { id:"halacha", ic:"14", t:"השקעה בהתאם להלכה", s:"היתר עסקה ומסלולים בפיקוח",
+    one:"למי שזה חשוב לו: בישראל יש קרנות ומסלולי גמל/השתלמות בפיקוח הלכתי, עם היתר עסקה.",
+    body:`<p>גופים רבים בישראל מציעים <b>מסלולי הלכה</b> בקופות גמל, קרנות השתלמות ופנסיה, וכן קרנות נאמנות וקרנות סל עם תעודת כשרות ו<b>היתר עסקה</b>, בפיקוח ועדה הלכתית.</p>
+    <ul><li>כדאי לשאול את הגוף: איזו ועדה הלכתית מפקחת, ומה המדיניות (למשל לגבי חברות שפועלות בשבת, ריבית והיתר עסקה).</li>
+    <li>לבדוק שדמי הניהול והמדד של המסלול סבירים גם בהשוואה למסלולים אחרים.</li>
+    <li>בשאלות הלכתיות ספציפיות, לשאול רב מוסמך.</li></ul>` },
+];
+
+const GLOSSARY = [
+  ["תיק השקעות","כל ההשקעות שלך יחד."],
+  ["נייר ערך","שם כללי למניה, אג״ח, קרן וכו׳."],
+  ["מספר נייר","מספר מזהה של נייר ערך בבורסה בתל אביב. בעזרתו מוצאים קרן בדיוק."],
+  ["טיקר","סימול קצר של נייר בחו״ל, למשל VOO."],
+  ["דמי ניהול","אחוז שנתי שהקרן או הקופה גובה מהסכום."],
+  ["דמי משמרת","דמי החזקה חודשיים על ניירות ערך בחשבון מסחר."],
+  ["עמלת מינימום","הסכום המינימלי שהברוקר גובה על פעולה, גם קטנה."],
+  ["פער מעקב (Tracking error)","כמה הקרן סוטה מהמדד שהיא מחקה. ככל שקטן יותר, טוב יותר."],
+  ["נכס ריאלי / תשואה ריאלית","תשואה אחרי ניכוי אינפלציה."],
+  ["תשואה נומינלית","תשואה לפני ניכוי אינפלציה."],
+  ["תנודתיות","כמה המחיר קופץ למעלה ולמטה."],
+  ["ירידה מהשיא (Drawdown)","כמה התיק ירד מהנקודה הכי גבוהה שלו."],
+  ["DCA / הפקדה חודשית","השקעת סכום קבוע במרווחי זמן קבועים, בלי לתזמן."],
+  ["איזון מחדש (Rebalancing)","החזרת התיק לחלוקה שתכננת, פעם בשנה בערך."],
+  ["קרן כספית","קרן שמשקיעה בפיקדונות ואג״ח קצרים מאוד. מקום טוב לקרן חירום."],
+  ["פיקדון","הפקדה בבנק לתקופה קבועה בריבית ידועה."],
+  ["ברוקר","חברה שדרכה קונים ומוכרים ניירות ערך."],
+  ["הוראת קבע","קנייה אוטומטית חודשית של קרן בסכום קבוע."],
+  ["טופס 867","אישור שנתי מהבנק/ברוקר הישראלי על רווחים ומס שנוכה."],
+  ["ETF / קרן סל","קרן שנסחרת בבורסה כמו מניה ומחקה מדד."],
+  ["UCITS","תקן אירופאי לקרנות. קרנות סל אירופאיות רבות (אירלנד) עומדות בו."],
+  ["דיבידנד","חלוקת רווח של חברה לבעלי המניות."],
+  ["רווח הון","הרווח ממכירת נכס ביותר ממה שקנית."],
+  ["קיזוז הפסדים","הפסד ממכירה מוריד את המס על רווחים באותה שנה."],
+  ["חשיפה מנייתית","איזה אחוז מהתיק במניות."],
+  ["שוק דובי / שורי","שוק יורד / שוק עולה."],
+  ["קרן חירום","כסף נזיל ל-3 עד 6 חודשי הוצאות, למקרה של אובדן הכנסה או הוצאה חריגה."],
+  ["מסלול מחקה מדד","מסלול בקופת גמל/השתלמות שמשקיע לפי מדד, למשל S&P 500."],
+];
+
+/* The path. Order matters: each step assumes the one before it. */
+const PATH = [
+  { id:"budget", t:"לדעת כמה נשאר לך כל חודש", s:"תקציב בסיסי", body:`
+    <p>לפני שמשקיעים, צריך לדעת כמה כסף באמת פנוי. עבור על 3 חודשים אחרונים בעו״ש ובאשראי:</p>
+    <ul><li>כמה נכנס בממוצע בחודש?</li><li>כמה יוצא (קבועות + משתנות)?</li><li>מה ההפרש? זה הסכום שאפשר לחלק בין קרן חירום, חובות והשקעה.</li></ul>
+    <div class="note">כלל אצבע: להתחיל להשקיע גם מסכום קטן (500 ₪ בחודש זה מצוין). העיקר העקביות.</div>` },
+  { id:"debt", t:"לסגור חובות יקרים", s:"מינוס, אשראי, הלוואות", body:`
+    <p>אין טעם להשקיע ולצפות ל-6%–7% בשנה כשמשלמים 10%–15% ריבית על מינוס או אשראי. סגירת חוב כזה היא ״תשואה בטוחה״ בגובה הריבית.</p>
+    <ul><li><b>קודם</b>: מינוס בעו״ש, חלוקת תשלומים בכרטיס אשראי בריבית, הלוואות צרכניות יקרות.</li>
+    <li><b>לא חייב לסגור קודם</b>: משכנתא בריבית סבירה, הלוואות זולות מאוד.</li></ul>` },
+  { id:"emergency", t:"לבנות קרן חירום", s:"3–6 חודשי הוצאות", body:`
+    <p>קרן חירום היא כסף נזיל ובטוח שמכסה 3 עד 6 חודשי הוצאות. היא מה שמונע ממך למכור השקעות בזמן ירידה כי ״צריך את הכסף״.</p>
+    <ul><li><b>איפה</b>: קרן כספית, פיקדון קצר, או חשבון עם ריבית. לא במניות.</li>
+    <li><b>כמה</b>: שכיר יציב: 3 חודשים. עצמאי / משפחה עם הכנסה אחת: 6 חודשים ומעלה.</li></ul>` },
+  { id:"taxfree", t:"לנצל קודם את הטבות המס", s:"השתלמות, פנסיה, גמל להשקעה", body:`
+    <p>לפני חשבון מסחר רגיל, כדאי למקסם את מה שהמדינה נותנת:</p>
+    <ol>
+      <li><b>קרן השתלמות</b>: אם אתה שכיר, בדוק בתלוש אם יש הפקדה. אם לא, שאל את המעסיק. אם יש, בדוק את דמי הניהול (אפשר להתמקח) ואת מסלול ההשקעה. מסלול מנייתי או מחקה מדד מתאים למי שלא צריך את הכסף שנים רבות.</li>
+      <li><b>פנסיה</b>: בדוק דמי ניהול מהפקדה ומצבירה ומסלול לפי גיל. הכסף הזה יעבוד בשבילך עשרות שנים.</li>
+      <li><b>קופת גמל להשקעה</b>: מעין ״חשבון השקעות עם בונוס״. מנהלים מקצועיים, אפשר לבחור מסלול S&amp;P 500 / מניות / הלכה, אפשר להחליף מסלול בלי מס, ואפשר למשוך בכל עת.</li>
+    </ol>
+    <div class="note gold">כדי לראות את כל המוצרים הפנסיוניים שלך במקום אחד: אתר <b>הר הכסף</b> של משרד האוצר. להשוואת דמי ניהול ותשואות של קופות: <b>גמל-נט</b>.</div>
+    <p class="small"><a href="https://itur.mof.gov.il" target="_blank" rel="noopener">הר הכסף ↗</a> · <a href="https://gemelnet.cma.gov.il" target="_blank" rel="noopener">גמל-נט ↗</a></p>` },
+  { id:"where", t:"לבחור איפה להשקיע", s:"בנק, ברוקר ישראלי, ברוקר זר או קופה", body:`<div id="whereCards"></div>` },
+  { id:"what", t:"לבחור במה להשקיע", s:"קרן מחקה מדד רחב בעלות נמוכה", body:`
+    <p>אחרי <a href="#profile">שאלון הסיכון</a> תקבל חלוקה כללית (למשל 70% מניות, 30% אג״ח). עכשיו בוחרים קרן לכל חלק:</p>
+    <div class="tablewrap"><table><thead><tr><th>חלק בתיק</th><th>מה מחפשים</th></tr></thead><tbody>
+      <tr><td>מניות חו״ל</td><td>קרן מחקה MSCI World / ACWI / All-World, או S&amp;P 500</td></tr>
+      <tr><td>מניות ישראל</td><td>קרן מחקה ת״א 125 (אופציונלי, חלק קטן)</td></tr>
+      <tr><td>אג״ח</td><td>קרן אג״ח ממשלתי (שקלי / צמוד) או מחקה מדד אג״ח רחב</td></tr>
+      <tr><td>מזומן</td><td>קרן כספית</td></tr>
+    </tbody></table></div>
+    <h4>5 בדיקות לכל קרן</h4>
+    <ol>
+      <li><b>איזה מדד?</b> רחב, מוכר, ומתאים לחלק שלו בתיק.</li>
+      <li><b>דמי ניהול</b>: ככל שנמוך יותר, טוב יותר. השווה בין 3–4 קרנות על אותו מדד.</li>
+      <li><b>גודל הקרן</b>: קרן גדולה (מאות מיליוני ₪ ומעלה) בדרך כלל יציבה ונזילה יותר.</li>
+      <li><b>פער מעקב</b>: עד כמה התשואה קרובה למדד לאורך כמה שנים.</li>
+      <li><b>מטבע</b>: מנוטרלת מט״ח או לא? (ראה ״חשיפה למטבע״ בלשונית ״ללמוד״).</li>
+    </ol>
+    <p>איפה מחפשים: אתר <a href="https://maya.tase.co.il" target="_blank" rel="noopener">מאיה ↗</a> של הבורסה, אתרי השוואת קרנות כמו <a href="https://www.funder.co.il" target="_blank" rel="noopener">פאנדר ↗</a>, ולקרנות סל אירופאיות <a href="https://www.justetf.com" target="_blank" rel="noopener">justETF ↗</a>.</p>
+    <div class="note red">האפליקציה לא ממליצה על קרן ספציפית או מניה ספציפית. זו החלטה שלך, אחרי השוואה.</div>` },
+  { id:"howmuch", t:"להחליט כמה ומתי", s:"סכום קבוע, כל חודש, אוטומטית", body:`
+    <ul>
+      <li><b>כמה</b>: הסכום שנשאר אחרי הוצאות, חובות וקרן חירום. אפילו 300–500 ₪ בחודש בונים הרגל וסכום משמעותי לאורך שנים.</li>
+      <li><b>מתי</b>: כל חודש, באותו יום (למשל יומיים אחרי המשכורת). לא מחכים ל״ירידה״ ולא ״לרגע הנכון״.</li>
+      <li><b>איך</b>: הוראת קבע לקנייה חודשית של קרן נאמנות, או הפקדה חודשית לקופת גמל להשקעה. ככה זה קורה בלי לחשוב.</li>
+      <li><b>יש סכום גדול בבת אחת?</b> סטטיסטית השקעה מיידית עדיפה בדרך כלל, אבל אם זה מלחיץ, מותר לפרוס על 6–12 חודשים.</li>
+    </ul>` },
+  { id:"open", t:"לפתוח חשבון ולבצע קנייה ראשונה", s:"צעד מעשי", body:`
+    <ol>
+      <li>בוחרים גוף (לפי השלב ״איפה להשקיע״) ופותחים חשבון אונליין. זה דורש תעודת זהות, פרטי חשבון בנק ושאלון התאמה.</li>
+      <li>מעבירים כסף מחשבון הבנק לחשבון המסחר (או מקימים הפקדה חודשית לקופה).</li>
+      <li>מחפשים את הקרן לפי <b>מספר נייר</b> (לא רק לפי שם, כי יש שמות דומים).</li>
+      <li>קונים, או מגדירים הוראת קבע חודשית.</li>
+      <li>רושמים את הקנייה כאן בלשונית <a href="#portfolio">״התיק שלי״</a>.</li>
+    </ol>` },
+  { id:"rebalance", t:"לעקוב, לאזן ולא לגעת", s:"פעם בחודש רישום, פעם בשנה איזון", body:`
+    <ul>
+      <li><b>כל חודש</b>: מוודאים שההפקדה בוצעה ורושמים אותה. זהו. לא בודקים כל יום.</li>
+      <li><b>פעם בשנה</b>: בודקים אם החלוקה סטתה מהתכנון ביותר מ-5%. אם כן, מאזנים, רצוי דרך ההפקדות החדשות (מפנים אותן לחלק שירד) כדי לא לשלם מס על מכירה.</li>
+      <li><b>פעם בשנה</b>: בודקים דמי ניהול בכל הקופות והחשבונות, ומתמקחים אם צריך.</li>
+      <li><b>כשהחיים משתנים</b> (חתונה, ילד, דירה, שינוי הכנסה): לחזור על שאלון הסיכון.</li>
+    </ul>` },
+];
+
+const WHERE = [
+  { t:"חשבון מסחר בבנק", tag:"הכי מוכר",
+    pro:["נוח, הכל באותו מקום","מס מנוכה אוטומטית","אפשר לקנות קרנות נאמנות בהוראת קבע"],
+    con:["דמי משמרת ועמלות לרוב גבוהים יותר","ממשק לפעמים מסורבל"],
+    fit:"מי שרוצה פשטות ומשקיע סכומים קטנים בקרנות נאמנות. כדאי לנסות להתמקח על העמלות." },
+  { t:"ברוקר ישראלי עצמאי", tag:"איזון טוב",
+    ex:"למשל: IBI, מיטב טרייד, אקסלנס, אלטשולר שחם טרייד ואחרים",
+    pro:["עמלות ודמי משמרת נמוכים יחסית (אצל רבים 0 דמי משמרת)","מס מנוכה אוטומטית וטופס 867","גישה לבורסה בת״א ולחו״ל"],
+    con:["צריך לפתוח חשבון נוסף ולהעביר כסף","לבדוק עמלות מינימום והמרת מט״ח"],
+    fit:"רוב המתחילים שרוצים חשבון מסחר עצמאי בעלות נמוכה." },
+  { t:"ברוקר זר", tag:"מתקדם",
+    ex:"למשל: Interactive Brokers",
+    pro:["עמלות נמוכות מאוד","מבחר עצום של קרנות סל בעולם"],
+    con:["אין ניכוי מס אוטומטי: חובת דיווח שנתי ותשלום עצמאי","ממשק באנגלית ומורכב","סכנת מס עיזבון אמריקאי על קרנות אמריקאיות"],
+    fit:"מי שמשקיע סכומים גדולים, מבין אנגלית ומוכן להתעסק בדיווח מס." },
+  { t:"קופת גמל להשקעה", tag:"פשוט מאוד",
+    ex:"מוצעת על ידי בתי השקעות וחברות ביטוח",
+    pro:["מנוהל בשבילך, בוחרים מסלול (S&P 500, מניות, הלכה ועוד)","החלפת מסלול בלי מס","בגיל 60 אפשר משיכה כקצבה פטורה ממס"],
+    con:["דמי ניהול מצבירה (להתמקח!)","תקרת הפקדה שנתית","פחות שליטה"],
+    fit:"מי שרוצה ״להפקיד ולשכוח״ עם הטבת מס. מתאים מאוד כצעד ראשון." },
+];
+
+const ASKS = [
+  { g:"לשאול את עצמי", items:[
+    ["horizon","מתי אצטרך את הכסף הזה?","פחות מ-3 שנים: לא במניות."],
+    ["efund","יש לי קרן חירום של 3–6 חודשים?",""],
+    ["debts","סגרתי חובות בריבית גבוהה?",""],
+    ["drop","מה אעשה אם התיק יירד 30%?","אם התשובה ״אמכור״, להגדיל אג״ח."],
+    ["goal","למה המטרה: דירה, פרישה, ביטחון?","מטרה ברורה עוזרת להחזיק מעמד."],
+  ]},
+  { g:"לשאול את הבנק / הברוקר", items:[
+    ["custody","כמה דמי משמרת בחודש?",""],
+    ["comm","מה עמלת הקנייה והמכירה, וכמה עמלת המינימום?",""],
+    ["fxfee","כמה עולה המרת מט״ח ומה המרווח?","רלוונטי לקנייה בחו״ל."],
+    ["standing","אפשר הוראת קבע חודשית לקרנות נאמנות?",""],
+    ["taxauto","המס מנוכה אוטומטית ומקבלים טופס 867?",""],
+    ["safety","הכסף והניירות מוחזקים בנפרד מהחברה? מה קורה אם היא נסגרת?",""],
+    ["regul","הגוף בפיקוח רשות ניירות ערך?",""],
+    ["transfer","כמה עולה להעביר ניירות לגוף אחר בעתיד?",""],
+    ["monthly","יש דמי ניהול חשבון חודשיים או עמלות נסתרות?",""],
+  ]},
+  { g:"לשאול על כל קרן", items:[
+    ["fidx","איזה מדד היא מחקה?",""],
+    ["ffee","מה דמי הניהול, ויש קרן זולה יותר על אותו מדד?",""],
+    ["fsize","מה גודל הקרן?",""],
+    ["ftrack","מה פער המעקב לאורך כמה שנים?",""],
+    ["ffx","מנוטרלת מט״ח או חשופה לדולר?",""],
+    ["facc","צוברת או מחלקת דיבידנד?",""],
+  ]},
+  { g:"לשאול על גמל / השתלמות / פנסיה", items:[
+    ["gfee","מה דמי הניהול מצבירה ומהפקדה, ואפשר להוריד?","לבקש הצעה מגוף מתחרה ולהתמקח."],
+    ["gtrack","באיזה מסלול אני היום, ומה עוד יש?",""],
+    ["gperf","איך המסלול ביצע ב-5 שנים מול מסלולים דומים?","לבדוק בגמל-נט."],
+    ["ghalacha","יש מסלול הלכה, ומי הוועדה המפקחת?","אם זה רלוונטי לך."],
+  ]},
+];
+
+const REDFLAGS = [
+  "מבטיחים תשואה גבוהה ״בטוחה״",
+  "לוחצים עליך להחליט מהר",
+  "״מניה חמה״, טיפ מקבוצת וואטסאפ או טלגרם",
+  "מישהו שמרוויח עמלה על מה שהוא ממליץ לך",
+  "מסחר ממונף, אופציות ״למתחילים״ או בוטים",
+  "גוף שלא בפיקוח רשות ניירות ערך או רשות שוק ההון",
+];
+
+const QUIZ = [
+  { q:"מתי תצטרך את רוב הכסף הזה?", key:"horizon", o:[["בתוך 3 שנים",0],["בעוד 3–5 שנים",1],["בעוד 5–10 שנים",3],["בעוד יותר מ-10 שנים",4]] },
+  { q:"מה הגיל שלך?", o:[["מעל 60",1],["45–60",2],["30–45",3],["מתחת ל-30",4]] },
+  { q:"יש לך קרן חירום (כסף נזיל ל-3 חודשים לפחות)?", key:"efund", o:[["אין",0],["חלקית",1],["כן, 3 חודשים",3],["כן, 6 חודשים ומעלה",4]] },
+  { q:"כמה יציבה ההכנסה שלך?", o:[["לא יציבה בכלל",1],["משתנה",2],["יציבה",3],["יציבה מאוד, עם רזרבות",4]] },
+  { q:"התיק שלך ירד 30% בחודשיים. מה תעשה?", o:[["אמכור הכל",0],["אמכור חלק",1],["לא אעשה כלום",3],["אקנה עוד",4]] },
+  { q:"כמה ניסיון יש לך בהשקעות?", o:[["אין בכלל",2],["קצת",2],["בינוני",3],["הרבה",4]] },
+  { q:"מה הכי חשוב לך?", o:[["לא להפסיד כסף",1],["צמיחה מתונה ויציבות",2],["צמיחה, גם עם תנודות",3],["צמיחה מקסימלית לטווח ארוך",4]] },
+  { q:"איזה חלק מכל החסכונות שלך הסכום הזה?", o:[["כמעט הכל",1],["יותר מחצי",2],["בערך רבע",3],["חלק קטן",4]] },
+];
+
+const PROFILES = [
+  { id:"cons", name:"שמרני", min:0,  a:{gl:20,il:5,bd:55,cs:20}, d:"שמירה על הערך עם מעט צמיחה. מתאים לטווח קצר-בינוני או למי שירידות מלחיצות אותו מאוד." },
+  { id:"mcons",name:"שמרני-מאוזן", min:14, a:{gl:35,il:5,bd:45,cs:15}, d:"יציבות קודם כל, עם חלק מנייתי שמאפשר צמיחה." },
+  { id:"bal",  name:"מאוזן", min:19, a:{gl:50,il:10,bd:35,cs:5}, d:"איזון בין צמיחה לשקט. מתאים לטווח של 5–10 שנים." },
+  { id:"grow", name:"צמיחה", min:24, a:{gl:70,il:10,bd:18,cs:2}, d:"רוב התיק במניות, לטווח של 10 שנים ומעלה. צריך עצבים לירידות." },
+  { id:"agg",  name:"צמיחה גבוהה", min:28, a:{gl:85,il:10,bd:5,cs:0}, d:"כמעט הכל במניות. רק לטווח ארוך מאוד ולמי שבאמת לא ימכור בירידות." },
+];
+const ACAT = { gl:["מניות חו״ל","var(--c1)"], il:["מניות ישראל","var(--c2)"], bd:["אג״ח","var(--c3)"], cs:["מזומן / כספית","var(--c5)"] };
+
+const MONTHLY = [
+  ["deposit","ההפקדה החודשית בוצעה","הוראת קבע או קנייה ידנית"],
+  ["log","רשמתי את הקנייה בלשונית ״התיק שלי״",""],
+  ["prices","עדכנתי מחירים ושמרתי תמונת מצב","פעם בחודש מספיק לגמרי"],
+  ["efund","קרן החירום עדיין מלאה","אם השתמשת בה, למלא קודם"],
+  ["calm","לא מכרתי בגלל כותרות או פחד",""],
+  ["learn","קראתי נושא אחד בלשונית ״ללמוד״",""],
+];
+const SEASONAL = {
+  1:[["f867","להוריד טופס 867 מהבנק/ברוקר","מגיע בתחילת השנה, לשמור לדוח שנתי"],["yearly","סקירה שנתית: לבדוק חלוקה ודמי ניהול",""]],
+  3:[["report","ברוקר זר? להתחיל להכין דוח שנתי לרשות המסים",""]],
+  6:[["mid","בדיקת אמצע שנה: לחזור על שאלון הסיכון אם משהו השתנה",""]],
+  10:[["fees","לבדוק דמי ניהול בגמל/השתלמות/פנסיה ולהתמקח",""]],
+  12:[["rebal","איזון שנתי: אם החלוקה סטתה ביותר מ-5%, לאזן דרך ההפקדות",""],["losses","לבדוק אפשרות קיזוז הפסדים לפני סוף שנת המס",""]],
+};
+/* ===== App logic ===== */
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const ILS = new Intl.NumberFormat("he-IL",{style:"currency",currency:"ILS",maximumFractionDigits:0});
+const ILS2 = new Intl.NumberFormat("he-IL",{style:"currency",currency:"ILS",maximumFractionDigits:2});
+const NUM = new Intl.NumberFormat("he-IL",{maximumFractionDigits:4});
+const PCT = v => (v>=0?"+":"") + (v*100).toFixed(1) + "%";
+const pad2 = n => String(n).padStart(2,"0");
+const ymd = d => `${d.getFullYear()}-${pad2(d.getMonth()+1)}-${pad2(d.getDate())}`;
+const today = () => ymd(new Date());
+const monthKey = (d=new Date()) => ymd(d).slice(0,7);
+const HEB_MONTHS = ["ינואר","פברואר","מרץ","אפריל","מאי","יוני","יולי","אוגוסט","ספטמבר","אוקטובר","נובמבר","דצמבר"];
+const uid = () => Math.random().toString(36).slice(2,10) + Date.now().toString(36).slice(-4);
+
+const ICONS = {
+  home:'<path d="M3 11 12 4l9 7"/><path d="M5 10v10h14V10"/><path d="M10 20v-6h4v6"/>',
+  path:'<circle cx="6" cy="18" r="2.5"/><circle cx="18" cy="6" r="2.5"/><path d="M8.5 18H15a3 3 0 0 0 0-6H9a3 3 0 0 1 0-6h6.5"/>',
+  learn:'<path d="M3 6.5 12 3l9 3.5-9 3.5z"/><path d="M7 8.5V14c0 1.5 2.5 3 5 3s5-1.5 5-3V8.5"/><path d="M21 6.5V12"/>',
+  profile:'<path d="M12 3 4 6v6c0 4.5 3.4 8 8 9 4.6-1 8-4.5 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+  portfolio:'<path d="M3 20h18"/><path d="M6 16V10"/><path d="M11 16V6"/><path d="M16 16v-4"/><path d="M20 16V8"/>',
+  calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8"/><path d="M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+  monthly:'<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>',
+};
+const VIEWS = [
+  ["home","בית","בית"],["path","המסלול שלי","מסלול"],["learn","ללמוד","ללמוד"],["profile","פרופיל סיכון","פרופיל"],
+  ["portfolio","התיק שלי","תיק"],["calc","מחשבון","מחשבון"],["monthly","משימות חודשיות","חודשי"],
+];
+const TAB_VIEWS = ["home","path","learn","portfolio","calc","monthly"];
+
+/* ---------- state & storage ---------- */
+const LS_KEY = "invest-compass.v1";
+const blank = () => ({ v:1, updatedAt:0, trades:[], prices:{}, fx:{USD:3.7}, snapshots:[], quiz:{}, steps:{}, monthly:{}, asks:{}, theme:"" });
+let S = blank();
+try { const raw = localStorage.getItem(LS_KEY); if (raw) S = Object.assign(blank(), JSON.parse(raw)); } catch(e) {}
+
+let dbRef = null, dbBusy = false, dbPending = false, saveTimer = null;
+function save(){
+  S.updatedAt = Date.now();
+  try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {}
+  clearTimeout(saveTimer); saveTimer = setTimeout(pushDb, 900);
+}
+async function pushDb(){
+  if (!dbRef) return;
+  if (dbBusy) { dbPending = true; return; }
+  dbBusy = true;
+  try { await dbRef.set(JSON.parse(JSON.stringify(S))); setSync("מסונכרן לחשבון שלך"); }
+  catch(e) { setSync("נשמר במכשיר זה"); }
+  dbBusy = false;
+  if (dbPending) { dbPending = false; pushDb(); }
+}
+function setSync(t){ const a=$("#syncstate"), b=$("#syncstate2"); if(a) a.textContent=t; if(b) b.textContent=t.includes("מסונכרן")?"מסונכרן":"נשמר במכשיר"; }
+async function connectDb(){
+  try {
+    if (!window.claude?.use) return;
+    const [db, user] = await Promise.all([window.claude.use("db"), window.claude.use("user")]);
+    if (!db || !user) return;
+    const id = await user.id(); if (!id) return;
+    const ref = db.doc(`data/users/${id}/main`);
+    const snap = await ref.get();
+    const remote = snap.exists ? snap.data() : null;
+    dbRef = ref;
+    if (remote && (remote.updatedAt||0) > (S.updatedAt||0)) {
+      S = Object.assign(blank(), remote);
+      try { localStorage.setItem(LS_KEY, JSON.stringify(S)); } catch(e) {}
+      render();
+      setSync("מסונכרן לחשבון שלך");
+    } else if (S.updatedAt) { await pushDb(); }
+    else setSync("מסונכרן לחשבון שלך");
+  } catch(e) { /* stays local */ }
+}
+
+/* ---------- portfolio math ---------- */
+const DEMO = (() => {
+  const t = [], y = new Date().getFullYear(), m = new Date().getMonth();
+  const mk = (back, fund, ticker, cat, acct, units, price) => {
+    const d = new Date(y, m-back, 10); t.push({ id:uid(), type:"buy", date:ymd(d), fund, ticker, cat, account:acct, units, price, cur:"ILS", fx:1, fee:0 });
+  };
+  const gl = [100,101.5,99.2,103,106.4,104.8,108.9,111.2], bd=[100,100.3,100.1,100.6,100.9,101.2,101.1,101.6];
+  for (let i=7;i>=0;i--) { mk(i,"קרן מחקה MSCI World (דוגמה)","DEMO-1","gl","חשבון מסחר",700/gl[7-i],gl[7-i]); mk(i,"קרן אג״ח ממשלתי (דוגמה)","DEMO-2","bd","חשבון מסחר",300/bd[7-i],bd[7-i]); }
+  return { trades:t, prices:{ "DEMO-1":{price:112.6,date:today()}, "DEMO-2":{price:101.9,date:today()} }, fx:{USD:3.7} };
+})();
+const isDemo = () => S.trades.length === 0;
+const data = () => isDemo() ? DEMO : S;
+const fundKey = t => (t.ticker||"").trim() || t.fund.trim();
+const CATS = { gl:"מניות חו״ל", il:"מניות ישראל", bd:"אג״ח", cs:"מזומן / כספית", ot:"אחר" };
+const CATC = { gl:"var(--c1)", il:"var(--c2)", bd:"var(--c3)", cs:"var(--c5)", ot:"var(--c4)" };
+
+function holdings(src = data()){
+  const H = {};
+  const sorted = [...src.trades].sort((a,b)=>a.date.localeCompare(b.date));
+  for (const t of sorted){
+    const k = fundKey(t);
+    const h = H[k] ||= { key:k, fund:t.fund, ticker:t.ticker, cat:t.cat, account:t.account, cur:t.cur, units:0, cost:0, realized:0, lastPrice:t.price, lastDate:t.date };
+    const fx = t.cur==="USD" ? (+t.fx||1) : 1;
+    const u = +t.units||0, p = +t.price||0, fee = +t.fee||0;
+    if (t.type === "sell"){
+      const avg = h.units ? h.cost/h.units : 0;
+      const uu = Math.min(u, h.units);
+      h.realized += uu*p*fx - fee - avg*uu; h.cost -= avg*uu; h.units -= uu;
+    } else { h.units += u; h.cost += u*p*fx + fee; }
+    h.lastPrice = p; h.lastDate = t.date; h.fund = t.fund; h.cat = t.cat; h.cur = t.cur;
+  }
+  for (const h of Object.values(H)){
+    const pr = src.prices[h.key];
+    h.price = pr ? +pr.price : h.lastPrice;
+    h.priceDate = pr ? pr.date : h.lastDate;
+    const fx = h.cur==="USD" ? (+src.fx?.USD||3.7) : 1;
+    h.value = h.units * h.price * fx;
+    h.gain = h.value - h.cost;
+  }
+  return Object.values(H).filter(h => h.units > 1e-9 || Math.abs(h.realized) > 0.005);
+}
+function totals(src = data()){
+  const hs = holdings(src);
+  const invested = hs.reduce((s,h)=>s+h.cost,0), value = hs.reduce((s,h)=>s+h.value,0), realized = hs.reduce((s,h)=>s+h.realized,0);
+  const deposited = src.trades.filter(t=>t.type!=="sell").reduce((s,t)=>s+(+t.units)*(+t.price)*(t.cur==="USD"?+t.fx||1:1)+(+t.fee||0),0);
+  const gain = value - invested;
+  return { hs, invested, value, realized, gain, pct: invested? gain/invested : 0, tax: Math.max(0,gain)*0.25, deposited };
+}
+
+/* ---------- charts (hand-drawn SVG, one scale per chart) ---------- */
+function donut(items, size=180){
+  const total = items.reduce((s,i)=>s+i.value,0) || 1;
+  const r = 70, c = 2*Math.PI*r; let off = 0;
+  const segs = items.filter(i=>i.value>0).map(i => {
+    const len = i.value/total*c;
+    const s = `<circle cx="90" cy="90" r="${r}" fill="none" style="stroke:${i.color}" stroke-width="26" stroke-dasharray="${len} ${c-len}" stroke-dashoffset="${-off}" transform="rotate(-90 90 90)"><title>${esc(i.label)}: ${(i.value/total*100).toFixed(1)}%</title></circle>`;
+    off += len; return s;
+  }).join("");
+  return `<div class="chart"><svg viewBox="0 0 180 180" width="${size}" role="img" aria-label="חלוקת התיק"><circle cx="90" cy="90" r="${r}" fill="none" style="stroke:var(--sunk)" stroke-width="26"/>${segs}</svg></div>`;
+}
+function legend(items){
+  const total = items.reduce((s,i)=>s+i.value,0) || 1;
+  return `<div class="legend" style="flex-direction:column;gap:6px">${items.filter(i=>i.value>0).map(i=>`<div><i style="background:${i.color}"></i>${esc(i.label)} <b class="num">${(i.value/total*100).toFixed(0)}%</b> <span class="muted small num">${ILS.format(i.value)}</span></div>`).join("")}</div>`;
+}
+function niceMax(v){ if (v<=0) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); const n = v/p; return (n<=1?1:n<=2?2:n<=2.5?2.5:n<=5?5:10)*p; }
+function shortILS(v){ if (Math.abs(v)>=1e6) return (v/1e6).toFixed(v%1e6?1:0)+"M"; if (Math.abs(v)>=1e4) return (v/1e3).toFixed(0)+"K"; if (Math.abs(v)>=1e3) return (v/1e3).toFixed(1).replace(/\.0$/,"")+"K"; return v.toFixed(0); }
+/* series: [{name,color,points:[[x,y]],area?:bool,step?:bool,dots?:bool}] ; x numeric */
+function lineChart(series, {xfmt=(x)=>x, h=240, xticks=5, minSpan=0}={}){
+  const W=480, H=h, L=46, R=14, T=14, B=28;
+  const xs = series.flatMap(s=>s.points.map(p=>p[0])), ys = series.flatMap(s=>s.points.map(p=>p[1]));
+  if (!xs.length) return "";
+  let x0=Math.min(...xs), x1=Math.max(...xs); if (x1-x0 < minSpan){ const c=(x0+x1)/2; x0=c-minSpan/2; x1=c+minSpan/2; } if (x1===x0) x1=x0+1;
+  const ymax = niceMax(Math.max(...ys)*1.05);
+  const X = x => L + (x-x0)/(x1-x0)*(W-L-R), Y = y => T + (1 - y/ymax)*(H-T-B);
+  let g = "";
+  for (let i=0;i<=4;i++){ const v=ymax*i/4, y=Y(v); g += `<line x1="${L}" x2="${W-R}" y1="${y}" y2="${y}" style="stroke:var(--line)" stroke-width="1" ${i?'stroke-dasharray="3 4"':''}/><text x="${L-8}" y="${y+4}" text-anchor="end">${shortILS(v)}</text>`; }
+  for (let i=0;i<xticks;i++){ const xv = x0 + (x1-x0)*i/(xticks-1); g += `<text x="${X(xv)}" y="${H-8}" text-anchor="${i===0?'start':i===xticks-1?'end':'middle'}">${esc(xfmt(xv))}</text>`; }
+  let paths = "";
+  for (const s of series){
+    const pts = s.points.map(p=>[X(p[0]),Y(p[1])]);
+    let d = "";
+    pts.forEach((p,i)=>{ if(i===0) d+=`M${p[0]},${p[1]}`; else if (s.step) d+=`H${p[0]}V${p[1]}`; else d+=`L${p[0]},${p[1]}`; });
+    if (s.area && pts.length) paths += `<path d="${d}V${Y(0)}H${pts[0][0]}Z" style="fill:${s.color};opacity:.14"/>`;
+    paths += `<path d="${d}" fill="none" style="stroke:${s.color}" stroke-width="2.4" stroke-linejoin="round"/>`;
+    if (s.dots) paths += pts.map(p=>`<circle cx="${p[0]}" cy="${p[1]}" r="3.2" style="fill:${s.color}"/>`).join("");
+    const last = pts[pts.length-1]; if (last) paths += `<circle cx="${last[0]}" cy="${last[1]}" r="5" style="fill:var(--surface);stroke:${s.color}" stroke-width="2.4"/>`;
+  }
+  return `<div class="chart"><svg viewBox="0 0 ${W} ${H}" role="img">${g}${paths}</svg></div>`;
+}
+
+/* ---------- shell ---------- */
+function icon(n){ return `<svg viewBox="0 0 24 24" aria-hidden="true">${ICONS[n]}</svg>`; }
+function buildNav(){
+  $("#railnav").innerHTML = VIEWS.map(([id,n])=>`<a href="#${id}" data-v="${id}">${icon(id)}<span>${n}</span></a>`).join("");
+  $("#tabbar").innerHTML = TAB_VIEWS.map(id=>{ const v=VIEWS.find(x=>x[0]===id); return `<a href="#${id}" data-v="${id}">${icon(id)}<span>${v[2]}</span></a>`; }).join("");
+}
+const current = () => { const h = location.hash.slice(1); return VIEWS.some(v=>v[0]===h) ? h : "home"; };
+const DISCLAIMER = `<div class="disclaimer" role="note"><svg width="18" height="18" viewBox="0 0 24 24"><path d="M12 3 2 20h20z"/><path d="M12 10v4M12 17h.01"/></svg><div><b>לימודי בלבד, לא ייעוץ השקעות.</b> המידע כאן כללי ואינו מתחשב בנתונים האישיים שלך, ואינו תחליף לייעוץ השקעות מבעל רישיון. עמלות, תקרות וכללי מס משתנים: בדוק תמיד את המידע העדכני לפני כל פעולה. אין כאן הבטחה לתשואה.</div></div>`;
+
+function render(){
+  const v = current();
+  $$("[data-v]").forEach(a => a.setAttribute("aria-current", a.dataset.v===v ? "page" : "false"));
+  const fn = { home:viewHome, path:viewPath, learn:viewLearn, profile:viewProfile, portfolio:viewPortfolio, calc:viewCalc, monthly:viewMonthly }[v];
+  $("#app").innerHTML = fn();
+  const after = { path:afterPath, profile:afterProfile, portfolio:afterPortfolio, calc:afterCalc, learn:afterLearn }[v];
+  after && after();
+}
+function go(v){ if (location.hash.slice(1)===v) render(); else location.hash = v; window.scrollTo(0,0); }
+window.addEventListener("hashchange", ()=>{ render(); window.scrollTo(0,0); });
+
+function toast(msg){ const t = document.createElement("div"); t.className="toast"; t.textContent=msg; document.body.appendChild(t); setTimeout(()=>t.remove(), 2200); }
+
+/* ---------- HOME ---------- */
+function profileResult(){
+  const ans = S.quiz || {};
+  if (Object.keys(ans).length < QUIZ.length) return null;
+  const score = QUIZ.reduce((s,q,i)=>s + (q.o[ans[i]]?.[1] ?? 0), 0);
+  let idx = PROFILES.reduce((best,p,i)=> score>=p.min ? i : best, 0);
+  const notes = [];
+  const hz = ans[0], ef = ans[2], panic = ans[4];
+  if (hz === 0){ idx = 0; notes.push("הכסף נדרש בתוך 3 שנים: עדיף לא להחזיק אותו במניות. שקול פיקדון, קרן כספית או אג״ח קצר."); }
+  else if (hz === 1 && idx > 1){ idx = 1; notes.push("טווח של 3–5 שנים מגביל את החלק המנייתי."); }
+  if (panic === 0 && idx > 1){ idx = 1; notes.push("ענית שתמכור הכל בירידה חדה. תיק עם פחות מניות יעזור לך להחזיק מעמד."); }
+  if (ef === 0) notes.push("אין עדיין קרן חירום: זה הצעד הראשון לפני השקעה במניות.");
+  return { score, p: PROFILES[idx], notes };
+}
+function nextStep(){ return PATH.find(p=>!S.steps[p.id]); }
+
+function viewHome(){
+  const done = PATH.filter(p=>S.steps[p.id]).length, pct = done/PATH.length;
+  const nx = nextStep(); const T = totals(); const pr = profileResult();
+  const mk = monthKey(), mItems = monthItems(new Date()), mDone = mItems.filter(i=>S.monthly[mk]?.[i[0]]).length;
+  const c = 2*Math.PI*50;
+  const greeting = (()=>{ const h=new Date().getHours(); return h<5?"לילה טוב":h<12?"בוקר טוב":h<17?"צהריים טובים":h<21?"ערב טוב":"לילה טוב"; })();
+  return `
+  <div class="hero">
+    <div class="card main">
+      <span class="eyebrow">${greeting}</span>
+      <h1>התוכנית שלך להשקעה רגועה ונכונה לטווח ארוך</h1>
+      <p class="lead">שלב אחר שלב: לסדר את הבסיס, להבין מה קונים ולמה, להשקיע כל חודש, ולעקוב בלי לחץ.</p>
+      ${nx ? `<div class="note"><b>הצעד הבא שלך:</b> ${esc(nx.t)}<br><span class="small muted">${esc(nx.s)}</span></div>
+      <div class="row"><a class="btn primary" href="#path">להמשיך במסלול</a><a class="btn" href="#learn">להתחיל ללמוד</a></div>`
+      : `<div class="note">סיימת את כל שלבי המסלול. מכאן: הפקדה חודשית, רישום, ואיזון פעם בשנה.</div><div class="row"><a class="btn primary" href="#monthly">למשימות החודש</a></div>`}
+    </div>
+    <div class="card" style="display:flex;gap:18px;align-items:center">
+      <div class="ring"><svg width="120" height="120" viewBox="0 0 120 120"><circle cx="60" cy="60" r="50" fill="none" style="stroke:var(--sunk)" stroke-width="12"/><circle cx="60" cy="60" r="50" fill="none" style="stroke:var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="${c*pct} ${c}"/></svg><b>${done}/${PATH.length}</b></div>
+      <div class="stack" style="gap:6px"><h3>התקדמות במסלול</h3><p class="small muted">${done===0?"עוד לא התחלת. זה בסדר, מתחילים בשלב 1.":done===PATH.length?"כל השלבים הושלמו.":"כל שלב שסימנת מקרב אותך."}</p><a class="small" href="#path">לכל השלבים ←</a></div>
+    </div>
+  </div>
+  ${DISCLAIMER}
+  <div class="grid g4">
+    <div class="card kpi"><span class="eyebrow">שווי התיק${isDemo()?" (דוגמה)":""}</span><span class="v">${ILS.format(T.value)}</span><span class="s ${T.gain>=0?'up':'down'} num">${ILS.format(T.gain)} · ${PCT(T.pct)}</span></div>
+    <div class="card kpi"><span class="eyebrow">סה״כ הושקע</span><span class="v">${ILS.format(T.invested)}</span><span class="s muted">עלות הרכישות כולל עמלות</span></div>
+    <div class="card kpi"><span class="eyebrow">פרופיל סיכון</span><span class="v" style="font-family:var(--display);direction:rtl;text-align:start">${pr?esc(pr.p.name):"—"}</span><span class="s">${pr?`<a href="#profile">לפרטים</a>`:`<a href="#profile">למלא שאלון (2 דקות)</a>`}</span></div>
+    <div class="card kpi"><span class="eyebrow">משימות ${HEB_MONTHS[new Date().getMonth()]}</span><span class="v">${mDone}/${mItems.length}</span><span class="s"><a href="#monthly">לרשימה</a></span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card stack">
+      <div class="sectionhead"><h2>החלוקה ${pr?"המומלצת לפרופיל שלך":"לדוגמה"}</h2>${pr?`<span class="pill good">${esc(pr.p.name)}</span>`:`<span class="pill">דוגמה: מאוזן</span>`}</div>
+      ${allocBar((pr?pr.p:PROFILES[2]).a)}
+      <p class="small muted">חלוקה כללית ולימודית, לא המלצה אישית. ${pr?"":"מלא את השאלון כדי לראות חלוקה לפי התשובות שלך."}</p>
+    </div>
+    <div class="card stack">
+      <h2>שלושה כללים שכדאי לזכור</h2>
+      <ol class="prose" style="margin:0;padding-inline-start:1.2em">
+        <li><b>פיזור רחב ועלות נמוכה</b>: קרנות מחקות מדד, לא מניות בודדות.</li>
+        <li><b>כל חודש, אוטומטית</b>: לא מנסים לנחש מתי השוק יעלה.</li>
+        <li><b>לא נוגעים בירידות</b>: מי שמוכר בפאניקה מקבע הפסד.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="card stack">
+    <div class="sectionhead"><h2>מה אפשר לעשות כאן</h2></div>
+    <div class="grid g3">
+      ${[["learn","ללמוד את הבסיס","14 נושאים קצרים, מילון מונחים"],["path","מסלול צעד אחר צעד","מתקציב ועד קנייה ראשונה"],["profile","שאלון סיכון","חלוקת תיק כללית לפי התשובות"],["portfolio","לעקוב אחרי התיק","רכישות, שווי, גרפים, גיבוי"],["calc","מחשבון צמיחה","הפקדה חודשית ודמי ניהול"],["monthly","משימות חודשיות","מה עושים כל חודש ושנה"]].map(([id,t,s])=>`<a class="optcard" href="#${id}" style="text-decoration:none;color:inherit"><div class="row" style="color:var(--accent)"><span style="width:22px;height:22px;display:inline-block">${icon(id).replace('<svg','<svg style="width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round"')}</span><b style="color:var(--fg)">${t}</b></div><span class="small muted">${s}</span></a>`).join("")}
+    </div>
+  </div>
+  <div class="card stack">
+    <h2>על ״המלצות ועדכונים״</h2>
+    <p class="muted">האפליקציה לא מתחברת לבורסה ולא מעדכנת את עצמה בהמלצות חדשות. זה מכוון: המסלול הנכון למשקיע מתחיל לא משתנה כל שבוע. מה שכן מתעדכן הוא רשימת המשימות החודשית והשנתית שלך, והנתונים שאתה מזין. אם תרצה, אפשר להגדיר בהמשך סקירה חודשית קבועה שתעבור על התיק ותזכיר מה לבדוק.</p>
+  </div>`;
+}
+function allocBar(a){
+  const keys = Object.keys(ACAT).filter(k=>a[k]>0);
+  return `<div class="alloc">${keys.map(k=>`<span style="width:${a[k]}%;background:${ACAT[k][1]}" title="${ACAT[k][0]}">${a[k]>=8?a[k]+"%":""}</span>`).join("")}</div>
+  <div class="legend">${keys.map(k=>`<span><i style="background:${ACAT[k][1]}"></i>${ACAT[k][0]} <b class="num">${a[k]}%</b></span>`).join("")}</div>`;
+}
+
+/* ---------- PATH ---------- */
+function viewPath(){
+  const done = PATH.filter(p=>S.steps[p.id]).length; const nx = nextStep();
+  return `
+  <div class="stack"><span class="eyebrow">המסלול שלי</span><h1>מה עושים, ובאיזה סדר</h1>
+  <p class="lead">${PATH.length} שלבים. כל שלב בונה על הקודם. סמן ״סיימתי״ כשהשלב מאחוריך, וההתקדמות תישמר.</p>
+  <div class="bar" aria-label="התקדמות"><i style="width:${done/PATH.length*100}%"></i></div></div>
+  <div class="steps">
+    ${PATH.map((p,i)=>`<div class="step ${S.steps[p.id]?'done':''}">
+      <div class="dot">${S.steps[p.id]?'✓':i+1}</div>
+      <div class="body"><details ${nx&&nx.id===p.id?'open':''}>
+        <summary><h3>${esc(p.t)}</h3><span class="small muted" style="display:none"></span>${S.steps[p.id]?'<span class="pill good">הושלם</span>':''}<svg class="chev" width="18" height="18" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+        <div class="content prose" style="max-width:none"><p class="muted small">${esc(p.s)}</p>${p.body}
+          <div class="row"><button class="btn ${S.steps[p.id]?'':'primary'} sm" data-step="${p.id}">${S.steps[p.id]?'בטל סימון':'סיימתי את השלב הזה'}</button></div>
+        </div></details></div></div>`).join("")}
+  </div>
+  <div class="card stack">
+    <div class="sectionhead"><h2>שאלות שחובה לשאול</h2><span class="pill">${Object.values(S.asks).filter(Boolean).length} סומנו</span></div>
+    <p class="muted small">לפני שפותחים חשבון או בוחרים קרן. סמן כל שאלה שקיבלת עליה תשובה.</p>
+    <div class="grid g2">${ASKS.map(g=>`<div class="stack" style="gap:4px"><h3>${g.g}</h3><div class="checks">${g.items.map(([id,q,h])=>`<label class="check"><input type="checkbox" data-ask="${id}" ${S.asks[id]?'checked':''}><span>${esc(q)}${h?`<small>${esc(h)}</small>`:''}</span></label>`).join("")}</div></div>`).join("")}</div>
+  </div>
+  <div class="card stack">
+    <h2>נורות אדומות</h2>
+    <p class="muted small">אם אחד מאלה קורה, עצור ובדוק פעמיים.</p>
+    <ul class="prose" style="margin:0">${REDFLAGS.map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
+  </div>
+  ${DISCLAIMER}`;
+}
+function afterPath(){
+  const w = $("#whereCards");
+  if (w) w.innerHTML = `<p>אין תשובה אחת. הנה ההבדלים העיקריים. רבים מתחילים בקופת גמל להשקעה או בברוקר ישראלי עצמאי.</p>
+  <div class="optcards">${WHERE.map(o=>`<div class="optcard"><div class="row" style="justify-content:space-between"><h3>${esc(o.t)}</h3><span class="pill">${esc(o.tag)}</span></div>${o.ex?`<span class="small muted">${esc(o.ex)}</span>`:''}
+    <ul>${o.pro.map(x=>`<li class="pro"><span style="color:var(--fg)">${esc(x)}</span></li>`).join("")}${o.con.map(x=>`<li class="con"><span style="color:var(--fg)">${esc(x)}</span></li>`).join("")}</ul>
+    <p class="small"><b>מתאים ל:</b> ${esc(o.fit)}</p></div>`).join("")}</div>
+  <p class="small muted">הדוגמאות אינן המלצה ואינן רשימה מלאה. עמלות משתנות: השווה מחירונים עדכניים באתרי הגופים עצמם. ירוק = יתרון, אדום = חיסרון.</p>`;
+  $$("[data-step]").forEach(b=>b.onclick=()=>{ const id=b.dataset.step; S.steps[id]=!S.steps[id]; save(); render(); if(S.steps[id]) toast("כל הכבוד, השלב סומן"); });
+  $$("[data-ask]").forEach(c=>c.onchange=()=>{ S.asks[c.dataset.ask]=c.checked; save(); });
+}
+
+/* ---------- LEARN ---------- */
+function viewLearn(){
+  return `<div class="stack"><span class="eyebrow">ללמוד</span><h1>הבסיס, בשפה פשוטה</h1>
+  <p class="lead">${LEARN.length} נושאים קצרים. כל אחד מתחיל במשפט אחד שכדאי לזכור. אפשר לקרוא לפי הסדר או לקפוץ.</p></div>
+  <div class="acc stack" style="gap:10px">${LEARN.map(l=>`<details id="l-${l.id}"><summary><span class="ic">${l.ic}</span><span class="t"><h3>${esc(l.t)}</h3><small>${esc(l.s)}</small></span><svg class="chev" width="18" height="18" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <div class="content prose" style="max-width:none"><p class="oneliner">${esc(l.one)}</p>${l.body}</div></details>`).join("")}</div>
+  <div class="card stack"><div class="sectionhead"><h2>מילון מונחים</h2><div class="field" style="min-width:200px"><label for="gq">חיפוש</label><input id="gq" type="search" placeholder="למשל: דמי משמרת"></div></div>
+  <div class="glossary" id="glist"></div></div>
+  ${DISCLAIMER}`;
+}
+function afterLearn(){
+  const draw = q => { $("#glist").innerHTML = GLOSSARY.filter(([t,d])=>!q || t.includes(q) || d.includes(q)).map(([t,d])=>`<div class="term"><b>${esc(t)}</b><span class="small muted">${esc(d)}</span></div>`).join("") || `<div class="empty">לא נמצא מונח כזה</div>`; };
+  draw(""); $("#gq").oninput = e => draw(e.target.value.trim());
+}
+
+/* ---------- PROFILE ---------- */
+function viewProfile(){
+  const r = profileResult(); const answered = Object.keys(S.quiz).length;
+  return `<div class="stack"><span class="eyebrow">פרופיל סיכון</span><h1>כמה סיכון מתאים לך?</h1>
+  <p class="lead">${QUIZ.length} שאלות קצרות. בסוף תקבל חלוקה כללית בין מניות, אג״ח ומזומן. זו נקודת פתיחה לימודית, לא המלצה אישית.</p>
+  <div class="bar"><i style="width:${answered/QUIZ.length*100}%"></i></div></div>
+  <div class="grid g2">${QUIZ.map((q,i)=>`<div class="card q"><span class="eyebrow">שאלה ${i+1} מתוך ${QUIZ.length}</span><h3>${esc(q.q)}</h3>
+    <div class="opts">${q.o.map((o,j)=>`<label class="opt"><input type="radio" name="q${i}" value="${j}" ${S.quiz[i]===j?'checked':''}><span>${esc(o[0])}</span></label>`).join("")}</div></div>`).join("")}</div>
+  <div id="presult">${r ? resultCard(r) : `<div class="empty">ענה על כל השאלות כדי לראות את התוצאה (${answered}/${QUIZ.length})</div>`}</div>
+  ${DISCLAIMER}`;
+}
+function resultCard(r){
+  const a = r.p.a, stocks = a.gl+a.il;
+  const crash = Math.round(stocks*0.5 + a.bd*0.1);
+  return `<div class="card stack" style="border-color:var(--accent)">
+    <div class="sectionhead"><div><span class="eyebrow">התוצאה שלך</span><h2>${esc(r.p.name)}</h2></div><span class="pill good">ניקוד ${r.score} מתוך 32</span></div>
+    <p>${esc(r.p.d)}</p>
+    ${allocBar(a)}
+    ${r.notes.map(n=>`<div class="note gold">${esc(n)}</div>`).join("")}
+    <div class="grid g3">
+      <div class="kpi"><span class="eyebrow">חלק מנייתי</span><span class="v">${stocks}%</span></div>
+      <div class="kpi"><span class="eyebrow">ירידה אפשרית במשבר חמור</span><span class="v down">−${crash}%</span><span class="s muted">המחשה גסה, לא תחזית</span></div>
+      <div class="kpi"><span class="eyebrow">על 100,000 ₪</span><span class="v down">−${ILS.format(crash*1000)}</span><span class="s muted">זמנית, עד התאוששות</span></div>
+    </div>
+    <h3>איך זה יכול להיראות בפועל (דוגמה כללית)</h3>
+    <ul class="prose" style="margin:0">
+      ${a.gl?`<li><b>${a.gl}% מניות חו״ל</b>: קרן מחקה מדד עולמי רחב (MSCI World / ACWI) או S&amp;P 500.</li>`:''}
+      ${a.il?`<li><b>${a.il}% מניות ישראל</b>: קרן מחקה ת״א 125.</li>`:''}
+      ${a.bd?`<li><b>${a.bd}% אג״ח</b>: קרן אג״ח ממשלתי או מדד אג״ח רחב.</li>`:''}
+      ${a.cs?`<li><b>${a.cs}% מזומן</b>: קרן כספית או פיקדון.</li>`:''}
+    </ul>
+    <p class="small muted">דרך פשוטה עוד יותר: מסלול אחד בקופת גמל להשקעה או בקרן השתלמות שהחשיפה המנייתית שלו קרובה ל-${stocks}%.</p>
+    <div class="row"><a class="btn primary" href="#path">חזרה למסלול</a><a class="btn" href="#calc">לראות במחשבון</a><button class="btn ghost" id="qreset">לענות מחדש</button></div>
+  </div>`;
+}
+function afterProfile(){
+  $$('.opt input').forEach(inp=>inp.onchange=()=>{
+    const i = +inp.name.slice(1); S.quiz[i] = +inp.value; save();
+    const r = profileResult(); const answered = Object.keys(S.quiz).length;
+    $(".bar i").style.width = (answered/QUIZ.length*100)+"%";
+    $("#presult").innerHTML = r ? resultCard(r) : `<div class="empty">ענה על כל השאלות כדי לראות את התוצאה (${answered}/${QUIZ.length})</div>`;
+    bindReset();
+    if (r && answered===QUIZ.length && i===QUIZ.length-1) $("#presult").scrollIntoView({behavior:"smooth",block:"start"});
+  });
+  bindReset();
+}
+function bindReset(){ const b=$("#qreset"); if (b) b.onclick=()=>{ S.quiz={}; save(); render(); window.scrollTo(0,0); }; }
+
+/* ---------- PORTFOLIO ---------- */
+let editing = null;
+function viewPortfolio(){
+  const src = data(), T = totals(src);
+  const byCat = {}; T.hs.forEach(h=>{ byCat[h.cat]=(byCat[h.cat]||0)+h.value; });
+  const catItems = Object.entries(byCat).map(([k,v])=>({label:CATS[k]||k,value:v,color:CATC[k]||"var(--c5)"}));
+  const pr = profileResult();
+  const funds = [...new Set(S.trades.map(t=>t.fund))];
+  return `<div class="sectionhead"><div class="stack" style="gap:4px"><span class="eyebrow">התיק שלי</span><h1>מעקב השקעות</h1></div>
+    <div class="row"><button class="btn primary" id="addBtn">+ הוספת פעולה</button><button class="btn" id="priceBtn">עדכון מחירים</button><button class="btn" id="ioBtn">גיבוי / שחזור</button></div></div>
+  ${isDemo()?`<div class="demo-banner"><span><b>אלו נתוני דוגמה</b> כדי שתראה איך זה נראה. ברגע שתוסיף פעולה ראשונה, הדוגמה תיעלם.</span><button class="btn sm primary" id="addBtn2">להוסיף רכישה ראשונה</button></div>`:''}
+  <div class="grid g4">
+    <div class="card kpi"><span class="eyebrow">שווי נוכחי</span><span class="v">${ILS.format(T.value)}</span><span class="s muted">לפי המחירים האחרונים שהוזנו</span></div>
+    <div class="card kpi"><span class="eyebrow">עלות (הושקע)</span><span class="v">${ILS.format(T.invested)}</span><span class="s muted">כולל עמלות</span></div>
+    <div class="card kpi"><span class="eyebrow">רווח / הפסד לא ממומש</span><span class="v ${T.gain>=0?'up':'down'}">${ILS.format(T.gain)}</span><span class="s ${T.gain>=0?'up':'down'} num">${PCT(T.pct)}</span></div>
+    <div class="card kpi"><span class="eyebrow">מס משוער אם תמכור היום</span><span class="v">${ILS.format(T.tax)}</span><span class="s muted">25% מהרווח, הערכה נומינלית גסה</span></div>
+  </div>
+  <div class="grid g2">
+    <div class="card stack"><h2>חלוקה לפי סוג</h2>
+      ${T.value>0?`<div class="donutwrap">${donut(catItems)}${legend(catItems)}</div>`:`<div class="empty">אין עדיין אחזקות</div>`}
+      ${pr&&T.value>0?driftTable(byCat,T.value,pr.p.a):pr?'':`<p class="small muted"><a href="#profile">מלא את שאלון הסיכון</a> כדי להשוות את התיק לחלוקת היעד.</p>`}
+    </div>
+    <div class="card stack"><div class="sectionhead"><h2>הושקע מול שווי לאורך זמן</h2></div>
+      <div id="histChart"></div>
+      <div class="legend"><span><i style="background:var(--c5)"></i>סה״כ הושקע</span><span><i style="background:var(--c1)"></i>שווי התיק (בכל עדכון מחירים)</span></div>
+    </div>
+  </div>
+  <div class="stack"><h2>אחזקות</h2>
+  <div class="tablewrap"><table><thead><tr><th>קרן</th><th>סוג</th><th>יחידות</th><th>מחיר אחרון</th><th>עלות</th><th>שווי</th><th>רווח</th></tr></thead><tbody>
+    ${T.hs.filter(h=>h.units>1e-9).map(h=>`<tr><td><b>${esc(h.fund)}</b>${h.ticker?`<br><span class="small muted num">${esc(h.ticker)}</span>`:''}${h.account?`<br><span class="small muted">${esc(h.account)}</span>`:''}</td><td><span class="pill" style="background:color-mix(in srgb,${CATC[h.cat]} 18%,transparent);color:var(--fg)">${CATS[h.cat]||''}</span></td><td class="n">${NUM.format(h.units)}</td><td class="n">${h.cur==="USD"?"$":"₪"}${NUM.format(h.price)}<br><span class="small muted">${esc(h.priceDate||'')}</span></td><td class="n">${ILS.format(h.cost)}</td><td class="n">${ILS.format(h.value)}</td><td class="n ${h.gain>=0?'up':'down'}">${ILS.format(h.gain)}<br>${PCT(h.cost?h.gain/h.cost:0)}</td></tr>`).join("") || `<tr><td colspan="7" class="muted">אין אחזקות פתוחות</td></tr>`}
+  </tbody></table></div>
+  ${T.realized?`<p class="small">רווח/הפסד ממומש (ממכירות): <b class="num ${T.realized>=0?'up':'down'}">${ILS.format(T.realized)}</b></p>`:''}
+  </div>
+  <div class="stack"><h2>יומן פעולות</h2>
+  <div class="tablewrap"><table><thead><tr><th>תאריך</th><th>פעולה</th><th>קרן</th><th>יחידות</th><th>מחיר</th><th>סכום</th><th></th></tr></thead><tbody>
+    ${[...src.trades].sort((a,b)=>b.date.localeCompare(a.date)).map(t=>{ const amt=(+t.units)*(+t.price)*(t.cur==="USD"?+t.fx||1:1); return `<tr><td class="n">${esc(t.date)}</td><td>${t.type==="sell"?'<span class="pill bad">מכירה</span>':'<span class="pill good">קנייה</span>'}</td><td>${esc(t.fund)}</td><td class="n">${NUM.format(t.units)}</td><td class="n">${t.cur==="USD"?"$":"₪"}${NUM.format(t.price)}</td><td class="n">${ILS.format(amt)}</td><td>${isDemo()?'':`<button class="btn sm ghost" data-edit="${t.id}">עריכה</button>`}</td></tr>`; }).join("")}
+  </tbody></table></div></div>
+  <div class="note small">המחירים לא מתעדכנים אוטומטית מהבורסה. פעם בחודש, היכנס לאתר הברוקר או לאתר מאיה, העתק את המחיר האחרון של כל קרן ולחץ ״עדכון מחירים״. בכל עדכון נשמרת נקודה בגרף. ${funds.length?'':''}</div>`;
+}
+function driftTable(byCat, total, target){
+  const map = { gl:"gl", il:"il", bd:"bd", cs:"cs" };
+  const rows = Object.keys(ACAT).map(k=>{ const cur=(byCat[k]||0)/total*100, tg=target[k]||0, d=cur-tg; return {k,cur,tg,d}; }).filter(r=>r.cur>0||r.tg>0);
+  const needs = rows.some(r=>Math.abs(r.d)>5);
+  return `<div class="tablewrap"><table><thead><tr><th>סוג</th><th>בפועל</th><th>יעד</th><th>סטייה</th></tr></thead><tbody>${rows.map(r=>`<tr><td>${ACAT[r.k][0]}</td><td class="n">${r.cur.toFixed(0)}%</td><td class="n">${r.tg}%</td><td class="n">${Math.abs(r.d)>5?`<span class="pill warn">${r.d>0?'+':''}${r.d.toFixed(0)}%</span>`:`${r.d>0?'+':''}${r.d.toFixed(0)}%`}</td></tr>`).join("")}</tbody></table></div>
+  <p class="small ${needs?'':'muted'}">${needs?"יש סטייה של יותר מ-5% מהיעד. אפשר לאזן בהדרגה: להפנות את ההפקדות הבאות לסוג שנמצא מתחת ליעד.":"התיק קרוב לחלוקת היעד. אין צורך לעשות כלום."}</p>`;
+}
+function historySeries(src){
+  const trades = [...src.trades].sort((a,b)=>a.date.localeCompare(b.date));
+  if (!trades.length) return null;
+  const pts = []; let inv = 0; const units = {}, costs = {};
+  for (const t of trades){
+    const k = fundKey(t), fx = t.cur==="USD"?+t.fx||1:1;
+    units[k]=units[k]||0; costs[k]=costs[k]||0;
+    if (t.type==="sell"){ const avg = units[k]?costs[k]/units[k]:0; const u=Math.min(+t.units,units[k]); costs[k]-=avg*u; units[k]-=u; }
+    else { units[k]+=+t.units; costs[k]+=(+t.units)*(+t.price)*fx+(+t.fee||0); }
+    inv = Object.values(costs).reduce((a,b)=>a+b,0);
+    pts.push([Date.parse(t.date), inv]);
+  }
+  const T = totals(src);
+  pts.push([Date.parse(today()), T.invested]);
+  let vals;
+  if (isDemo()){
+    // demo: value approximated at each monthly buy from the demo price paths
+    vals = []; const u = {};
+    for (const t of trades){ u[t.ticker]=(u[t.ticker]||0)+ +t.units; const priceAt = {}; trades.filter(x=>x.date<=t.date).forEach(x=>priceAt[x.ticker]=+x.price); vals.push([Date.parse(t.date), Object.entries(u).reduce((s,[k,n])=>s+n*(priceAt[k]||0),0)]); }
+  } else vals = (src.snapshots||[]).map(s=>[Date.parse(s.date), s.value]);
+  vals.push([Date.parse(today()), T.value]);
+  return { inv:pts, val:vals };
+}
+function afterPortfolio(){
+  const hs = historySeries(data());
+  const fmtD = x => { const d=new Date(x); return `${HEB_MONTHS[d.getMonth()].slice(0,3)} ${String(d.getFullYear()).slice(2)}`; };
+  $("#histChart").innerHTML = hs ? lineChart([{name:"הושקע",color:"var(--c5)",points:hs.inv,step:true},{name:"שווי",color:"var(--c1)",points:hs.val,area:true,dots:hs.val.length<30}],{xfmt:fmtD,h:240,xticks:4,minSpan:90*864e5}) : `<div class="empty">הגרף יופיע אחרי הרכישה הראשונה</div>`;
+  const open = () => openTradeModal(); $("#addBtn").onclick = open; const b2=$("#addBtn2"); if (b2) b2.onclick = open;
+  $("#priceBtn").onclick = openPriceModal; $("#ioBtn").onclick = openIoModal;
+  $$("[data-edit]").forEach(b=>b.onclick=()=>openTradeModal(S.trades.find(t=>t.id===b.dataset.edit)));
+}
+function modal(html){ $("#modalroot").innerHTML = `<div class="modal" role="dialog" aria-modal="true"><div class="card stack">${html}</div></div>`; const m=$(".modal"); m.onclick=e=>{ if(e.target===m) closeModal(); }; return m; }
+function closeModal(){ $("#modalroot").innerHTML=""; }
+document.addEventListener("keydown", e=>{ if(e.key==="Escape") closeModal(); });
+
+function openTradeModal(t){
+  const isEdit = !!t; t = t || { type:"buy", date:today(), fund:"", ticker:"", cat:"gl", account:"", units:"", price:"", cur:"ILS", fx:S.fx?.USD||3.7, fee:0 };
+  const known = [...new Map(S.trades.map(x=>[fundKey(x),x])).values()];
+  const m = modal(`<div class="sectionhead"><h2>${isEdit?"עריכת פעולה":"הוספת פעולה"}</h2><button class="btn ghost sm" data-close>סגירה</button></div>
+  <form id="tf" class="form">
+    <div class="field"><label for="f_type">פעולה</label><select id="f_type"><option value="buy">קנייה</option><option value="sell">מכירה</option></select></div>
+    <div class="field"><label for="f_date">תאריך</label><input id="f_date" type="date" required value="${esc(t.date)}"></div>
+    <div class="field wide"><label for="f_fund">שם הקרן</label><input id="f_fund" required list="fundlist" placeholder="למשל: קרן מחקה MSCI World" value="${esc(t.fund)}"><datalist id="fundlist">${known.map(k=>`<option value="${esc(k.fund)}">`).join("")}</datalist></div>
+    <div class="field"><label for="f_ticker">מספר נייר / טיקר</label><input id="f_ticker" placeholder="אופציונלי" value="${esc(t.ticker)}"></div>
+    <div class="field"><label for="f_cat">סוג</label><select id="f_cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join("")}</select></div>
+    <div class="field wide"><label for="f_acct">איפה (חשבון)</label><input id="f_acct" placeholder="למשל: גמל להשקעה / חשבון מסחר" value="${esc(t.account)}"></div>
+    <div class="field"><label for="f_cur">מטבע המחיר</label><select id="f_cur"><option value="ILS">₪ שקל</option><option value="USD">$ דולר</option></select></div>
+    <div class="field" id="fxwrap"><label for="f_fx">שער דולר בקנייה</label><input id="f_fx" type="number" step="0.0001" min="0" value="${esc(t.fx)}"></div>
+    <div class="field"><label for="f_amount">סכום כולל (לחישוב יחידות)</label><input id="f_amount" type="number" step="0.01" min="0" placeholder="אופציונלי"></div>
+    <div class="field"><label for="f_price">מחיר ליחידה</label><input id="f_price" type="number" step="0.0001" min="0" required value="${esc(t.price)}"></div>
+    <div class="field"><label for="f_units">כמות יחידות</label><input id="f_units" type="number" step="0.0001" min="0" required value="${esc(t.units)}"></div>
+    <div class="field"><label for="f_fee">עמלה (₪)</label><input id="f_fee" type="number" step="0.01" min="0" value="${esc(t.fee)}"></div>
+  </form>
+  <p class="small muted">טיפ: בקרנות נאמנות בישראל המחיר מוצג לרוב <b>באגורות</b>. למשל 15,230 אגורות = 152.30 ₪. אם הזנת ״סכום כולל״ ומחיר, היחידות יחושבו לבד.</p>
+  <div class="row" style="justify-content:space-between"><div class="row">${isEdit?`<button class="btn danger" id="delT">מחיקה</button>`:''}</div><div class="row"><button class="btn" data-close>ביטול</button><button class="btn primary" id="saveT">שמירה</button></div></div>`);
+  $("#f_type").value = t.type; $("#f_cat").value = t.cat; $("#f_cur").value = t.cur;
+  const fx = () => { $("#fxwrap").hidden = $("#f_cur").value!=="USD"; }; fx(); $("#f_cur").onchange = fx;
+  const calcUnits = () => { const a=+$("#f_amount").value, p=+$("#f_price").value, f=$("#f_cur").value==="USD"?(+$("#f_fx").value||1):1; if (a>0&&p>0) $("#f_units").value = (a/(p*f)).toFixed(4); };
+  $("#f_amount").oninput = calcUnits; $("#f_price").addEventListener("input", ()=>{ if(+$("#f_amount").value) calcUnits(); });
+  $("#f_fund").onchange = () => { const k = known.find(x=>x.fund===$("#f_fund").value); if (k){ $("#f_ticker").value=k.ticker||""; $("#f_cat").value=k.cat; $("#f_acct").value=k.account||""; $("#f_cur").value=k.cur; fx(); } };
+  $$("[data-close]",m).forEach(b=>b.onclick=closeModal);
+  $("#saveT").onclick = () => {
+    const f = $("#tf"); if (!f.reportValidity()) return;
+    const rec = { id: isEdit? t.id : uid(), type:$("#f_type").value, date:$("#f_date").value, fund:$("#f_fund").value.trim(), ticker:$("#f_ticker").value.trim(), cat:$("#f_cat").value, account:$("#f_acct").value.trim(), cur:$("#f_cur").value, fx:+$("#f_fx").value||1, units:+$("#f_units").value, price:+$("#f_price").value, fee:+$("#f_fee").value||0 };
+    if (!(rec.units>0 && rec.price>0)) { toast("צריך כמות ומחיר גדולים מאפס"); return; }
+    if (isEdit) S.trades = S.trades.map(x=>x.id===rec.id?rec:x); else S.trades.push(rec);
+    if (rec.cur==="USD") S.fx.USD = S.fx.USD || rec.fx;
+    const k = fundKey(rec); const cp = S.prices[k];
+    if (!cp || cp.date <= rec.date) S.prices[k] = { price: rec.price, date: rec.date };
+    save(); closeModal(); render(); toast(isEdit?"הפעולה עודכנה":"הפעולה נשמרה");
+  };
+  const del = $("#delT");
+  if (del) del.onclick = () => {
+    if (del.dataset.armed){ S.trades = S.trades.filter(x=>x.id!==t.id); save(); closeModal(); render(); toast("הפעולה נמחקה"); }
+    else { del.dataset.armed = "1"; del.textContent = "ללחוץ שוב לאישור מחיקה"; }
+  };
+}
+function openPriceModal(){
+  if (isDemo()) { toast("קודם צריך להוסיף רכישה"); return; }
+  const hs = holdings(S).filter(h=>h.units>1e-9);
+  const hasUSD = hs.some(h=>h.cur==="USD");
+  const m = modal(`<div class="sectionhead"><h2>עדכון מחירים</h2><button class="btn ghost sm" data-close>סגירה</button></div>
+  <p class="small muted">הזן את המחיר האחרון של כל קרן (מאתר הברוקר או מאיה). בשמירה נוספת נקודה לגרף ההיסטוריה.</p>
+  <div class="form" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
+    ${hs.map((h,i)=>`<div class="field" style="justify-content:center"><b>${esc(h.fund)}</b><span class="small muted">${h.cur==="USD"?"מחיר בדולר":"מחיר בשקלים"} · עודכן ${esc(h.priceDate||'')}</span></div><div class="field"><label for="p_${i}">מחיר ליחידה</label><input id="p_${i}" data-key="${esc(h.key)}" type="number" step="0.0001" min="0" value="${h.price}"></div>`).join("")}
+    ${hasUSD?`<div class="field" style="justify-content:center"><b>שער דולר נוכחי</b></div><div class="field"><label for="p_usd">₪ לדולר</label><input id="p_usd" type="number" step="0.0001" min="0" value="${S.fx.USD||3.7}"></div>`:''}
+  </div>
+  <div class="row" style="justify-content:flex-end"><button class="btn" data-close>ביטול</button><button class="btn primary" id="saveP">שמירה ותמונת מצב</button></div>`);
+  $$("[data-close]",m).forEach(b=>b.onclick=closeModal);
+  $("#saveP").onclick = () => {
+    $$("input[data-key]",m).forEach(inp=>{ const v=+inp.value; if (v>0) S.prices[inp.dataset.key] = { price:v, date:today() }; });
+    const u = $("#p_usd"); if (u && +u.value>0) S.fx.USD = +u.value;
+    const T = totals(S); S.snapshots = (S.snapshots||[]).filter(s=>s.date!==today()); S.snapshots.push({ date:today(), value:Math.round(T.value*100)/100, invested:Math.round(T.invested*100)/100 });
+    S.snapshots.sort((a,b)=>a.date.localeCompare(b.date));
+    const mk = monthKey(); (S.monthly[mk] ||= {}).prices = true;
+    save(); closeModal(); render(); toast("המחירים עודכנו");
+  };
+}
+async function openIoModal(){
+  const json = JSON.stringify(S, null, 1);
+  const m = modal(`<div class="sectionhead"><h2>גיבוי ושחזור</h2><button class="btn ghost sm" data-close>סגירה</button></div>
+  <p class="small muted">הנתונים שלך נשמרים בדפדפן${dbRef?" ומסונכרנים לחשבון Claude שלך":""}. מומלץ לגבות פעם בחודש: להעתיק את הטקסט ולשמור אותו בהערה או במייל לעצמך.</p>
+  <div class="field"><label for="io_out">הגיבוי שלך (JSON)</label><textarea id="io_out" readonly>${esc(json)}</textarea></div>
+  <div class="row"><button class="btn primary" id="copyBtn">העתקה</button><button class="btn" id="dlBtn">שמירה כקובץ</button></div>
+  <hr style="border:none;border-top:1px solid var(--line);width:100%">
+  <div class="field"><label for="io_in">שחזור: הדבק גיבוי או בחר קובץ</label><textarea id="io_in" placeholder='{"v":1,...}'></textarea></div>
+  <div class="row"><input type="file" id="io_file" accept="application/json,.json,.txt"><button class="btn" id="impBtn">שחזור מהגיבוי</button></div>
+  <p class="small muted">שחזור מחליף את כל הנתונים הנוכחיים.</p>`);
+  $$("[data-close]",m).forEach(b=>b.onclick=closeModal);
+  $("#copyBtn").onclick = () => { navigator.clipboard?.writeText(json).then(()=>toast("הועתק"), ()=>{ $("#io_out").select(); toast("סמן והעתק ידנית"); }) ?? ($("#io_out").select()); };
+  $("#dlBtn").onclick = async () => {
+    const name = `investment-backup-${today()}.json`;
+    try {
+      const dl = window.claude?.use ? await window.claude.use("downloads") : null;
+      if (dl) { await dl.save({ filename:name, data:json }); return; }
+    } catch(e) { toast("השמירה בוטלה"); return; }
+    try { const a=document.createElement("a"); a.href=URL.createObjectURL(new Blob([json],{type:"application/json"})); a.download=name; a.click(); } catch(e) { toast("השתמש בכפתור העתקה"); }
+  };
+  $("#io_file").onchange = e => { const f=e.target.files[0]; if(!f) return; const r=new FileReader(); r.onload=()=>{ $("#io_in").value=r.result; }; r.readAsText(f); };
+  $("#impBtn").onclick = () => {
+    try { const obj = JSON.parse($("#io_in").value); if (!Array.isArray(obj.trades)) throw 0; S = Object.assign(blank(), obj); save(); closeModal(); render(); toast("הנתונים שוחזרו"); }
+    catch(e) { toast("הטקסט אינו גיבוי תקין"); }
+  };
+}
+
+/* ---------- CALCULATOR ---------- */
+const CALC = { init:10000, monthly:1000, rate:6, years:20, fee:0.2, fee2:1.0, infl:2.5, real:false };
+function simulate(init, monthly, rate, fee, years){
+  const r = Math.pow(1 + (rate-fee)/100, 1/12) - 1; let bal = init, dep = init; const pts=[[0,bal]], dps=[[0,dep]];
+  for (let m=1;m<=years*12;m++){ bal = bal*(1+r) + monthly; dep += monthly; if (m%12===0){ pts.push([m/12,bal]); dps.push([m/12,dep]); } }
+  return { bal, dep, pts, dps };
+}
+function viewCalc(){
+  const fields = [["init","סכום התחלתי (₪)",0,1000000,1000],["monthly","הפקדה חודשית (₪)",0,20000,100],["rate","תשואה שנתית משוערת (%)",0,12,0.5],["years","שנים",1,45,1],["fee","דמי ניהול שנתיים (%)",0,2.5,0.05],["fee2","להשוואה: דמי ניהול גבוהים (%)",0,2.5,0.05]];
+  return `<div class="stack"><span class="eyebrow">מחשבון</span><h1>כמה זה יכול לצמוח?</h1>
+  <p class="lead">שחק עם המספרים כדי להבין את הכוח של זמן, הפקדה קבועה ודמי ניהול. זו המחשה מתמטית, לא תחזית.</p></div>
+  <div class="grid g2" style="align-items:start">
+    <div class="card stack">
+      ${fields.map(([k,l,mn,mx,st])=>`<div class="field"><label for="c_${k}">${l}</label><div class="row" style="flex-wrap:nowrap"><input type="range" id="r_${k}" min="${mn}" max="${mx}" step="${st}" value="${CALC[k]}" style="flex:1;min-width:0"><input type="number" id="c_${k}" min="${mn}" step="${st}" value="${CALC[k]}" style="width:110px;flex:none"></div></div>`).join("")}
+      <label class="check" style="padding:4px 0"><input type="checkbox" id="c_real" ${CALC.real?'checked':''}><span>להציג בערכים של היום (בניכוי אינפלציה של ${CALC.infl}%)<small>מראה כמה הכסף ״שווה״ בכוח קנייה של היום</small></span></label>
+      <div class="row small muted">תרחישים מהירים:
+        <button class="btn sm" data-sc="3">זהיר 3%</button><button class="btn sm" data-sc="5">בינוני 5%</button><button class="btn sm" data-sc="7">אופטימי 7%</button></div>
+    </div>
+    <div class="stack">
+      <div class="grid g2" id="calcKpis"></div>
+      <div class="card stack"><h3>צמיחה לאורך זמן</h3><div id="calcChart"></div>
+        <div class="legend"><span><i style="background:var(--c1)"></i>שווי (דמי ניהול נמוכים)</span><span><i style="background:var(--c6)"></i>שווי (דמי ניהול גבוהים)</span><span><i style="background:var(--c5)"></i>סך ההפקדות</span></div></div>
+      <div class="card stack" id="feeLesson"></div>
+    </div>
+  </div>
+  <p class="small muted">הנחות: תשואה קבועה כל שנה (במציאות היא קופצת), דמי ניהול מנוכים מהתשואה, הפקדה בסוף כל חודש, ללא מס. בעת מכירה ישולם מס רווח הון של 25% על הרווח הריאלי, אלא אם מדובר בקרן השתלמות אחרי 6 שנים או משיכה כקצבה מגמל להשקעה.</p>
+  ${DISCLAIMER}`;
+}
+function afterCalc(){
+  const keys = ["init","monthly","rate","years","fee","fee2"];
+  const draw = () => {
+    const a = simulate(CALC.init, CALC.monthly, CALC.rate, CALC.fee, CALC.years), b = simulate(CALC.init, CALC.monthly, CALC.rate, CALC.fee2, CALC.years);
+    const df = y => CALC.real ? 1/Math.pow(1+CALC.infl/100, y) : 1;
+    const adj = pts => pts.map(([y,v])=>[y, v*df(y)]);
+    const A = a.bal*df(CALC.years), B = b.bal*df(CALC.years), D = a.dep*df(CALC.years);
+    const gainTax = Math.max(0, a.bal - a.dep)*0.25*df(CALC.years);
+    $("#calcKpis").innerHTML = `
+      <div class="card kpi"><span class="eyebrow">שווי משוער בעוד ${CALC.years} שנים</span><span class="v up">${ILS.format(A)}</span><span class="s muted">${CALC.real?"בכוח קנייה של היום":"נומינלי"}</span></div>
+      <div class="card kpi"><span class="eyebrow">מתוכו הפקדות שלך</span><span class="v">${ILS.format(a.dep)}</span><span class="s muted">צמיחה: ${ILS.format(A - a.dep*(CALC.real?df(CALC.years):1))}</span></div>
+      <div class="card kpi"><span class="eyebrow">מס משוער במשיכה</span><span class="v">${ILS.format(gainTax)}</span><span class="s muted">25% מהרווח (בערך)</span></div>
+      <div class="card kpi"><span class="eyebrow">ההפרש בגלל דמי ניהול</span><span class="v down">${ILS.format(A-B)}</span><span class="s muted">${CALC.fee}% מול ${CALC.fee2}%</span></div>`;
+    $("#calcChart").innerHTML = lineChart([
+      {color:"var(--c5)", points:adj(a.dps)},
+      {color:"var(--c6)", points:adj(b.pts)},
+      {color:"var(--c1)", points:adj(a.pts), area:true},
+    ], { xfmt: x=>`${Math.round(x)} ש׳`, xticks: Math.min(6, CALC.years+1), h:250 });
+    const share = A>0 ? (A-B)/A : 0;
+    $("#feeLesson").innerHTML = `<h3>מה דמי הניהול עושים לך</h3><p>בתרחיש הזה, ההבדל בין ${CALC.fee}% ל-${CALC.fee2}% דמי ניהול בשנה הוא <b class="num down">${ILS.format(A-B)}</b>, כלומר כ-<b>${(share*100).toFixed(0)}%</b> מהכסף שהיה יכול להיות שלך. זו הסיבה שבודקים דמי ניהול לפני הכל.</p>`;
+  };
+  keys.forEach(k=>{
+    const r=$("#r_"+k), n=$("#c_"+k);
+    r.oninput = () => { n.value = r.value; CALC[k] = +r.value; draw(); };
+    n.oninput = () => { const v = +n.value; if (isNaN(v)) return; CALC[k] = Math.max(+n.min, k==="years"?Math.min(60,Math.round(v)||1):v); r.value = CALC[k]; draw(); };
+  });
+  $("#c_real").onchange = e => { CALC.real = e.target.checked; draw(); };
+  $$("[data-sc]").forEach(b=>b.onclick=()=>{ CALC.rate=+b.dataset.sc; $("#r_rate").value=CALC.rate; $("#c_rate").value=CALC.rate; draw(); });
+  draw();
+}
+
+/* ---------- MONTHLY ---------- */
+let monthOffset = 0;
+function monthItems(d){ return [...MONTHLY, ...(SEASONAL[d.getMonth()+1]||[])]; }
+function viewMonthly(){
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()+monthOffset);
+  const mk = monthKey(new Date(d.getFullYear(), d.getMonth(), 15)); const items = monthItems(d); const st = S.monthly[mk]||{};
+  const done = items.filter(i=>st[i[0]]).length;
+  const hist = Object.keys(S.monthly).sort().reverse().slice(0,12).map(k=>{ const dd=new Date(k+"-15"); const it=monthItems(dd); const n=it.filter(i=>S.monthly[k][i[0]]).length; return {k,dd,n,t:it.length}; });
+  return `<div class="stack"><span class="eyebrow">משימות חודשיות</span><h1>מה עושים החודש</h1>
+  <p class="lead">השגרה של משקיע לטווח ארוך קצרה ומשעממת, וזה בדיוק הרעיון. כמה דקות בחודש, וסקירה מסודרת פעם בשנה.</p></div>
+  <div class="card stack">
+    <div class="sectionhead"><div class="row"><button class="btn sm" id="mPrev" aria-label="חודש קודם">→</button><h2>${HEB_MONTHS[d.getMonth()]} ${d.getFullYear()}</h2><button class="btn sm" id="mNext" aria-label="חודש הבא" ${monthOffset>=1?'disabled':''}>←</button></div><span class="pill ${done===items.length?'good':''}">${done}/${items.length} הושלמו</span></div>
+    <div class="bar"><i style="width:${done/items.length*100}%"></i></div>
+    <div class="checks">${items.map(([id,t,h])=>`<label class="check"><input type="checkbox" data-m="${id}" ${st[id]?'checked':''}><span>${esc(t)}${SEASONAL[d.getMonth()+1]?.some(x=>x[0]===id)?' <span class="pill warn">עונתי</span>':''}${h?`<small>${esc(h)}</small>`:''}</span></label>`).join("")}</div>
+  </div>
+  <div class="grid g2">
+    <div class="card stack"><h2>לוח השנה של המשקיע</h2>
+      <div class="tablewrap"><table><tbody>
+        <tr><td><b>ינואר</b></td><td>טופס 867, סקירה שנתית</td></tr>
+        <tr><td><b>מרץ</b></td><td>הכנת דוח שנתי (אם יש ברוקר זר)</td></tr>
+        <tr><td><b>יוני</b></td><td>בדיקת אמצע שנה</td></tr>
+        <tr><td><b>אוקטובר</b></td><td>בדיקת דמי ניהול בקופות</td></tr>
+        <tr><td><b>דצמבר</b></td><td>איזון שנתי, קיזוז הפסדים</td></tr>
+      </tbody></table></div></div>
+    <div class="card stack"><h2>ההיסטוריה שלך</h2>
+      ${hist.length?`<div class="checks">${hist.map(h=>`<div class="row" style="justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--line)"><span>${HEB_MONTHS[h.dd.getMonth()]} ${h.dd.getFullYear()}</span><span class="pill ${h.n===h.t?'good':h.n?'warn':''}">${h.n}/${h.t}</span></div>`).join("")}</div>`:`<div class="empty">החודשים שתסמן יופיעו כאן</div>`}
+    </div>
+  </div>
+  <div class="card stack"><h2>עדכונים והמלצות חדשות</h2>
+    <p>האפליקציה עצמה לא מושכת מידע מהאינטרנט ולא ״ממליצה״ באופן אוטומטי. בשביל משקיע מתחיל לטווח ארוך, זה יתרון: התוכנית לא אמורה להשתנות בגלל חדשות. אם תרצה בכל זאת עדכון קבוע, אפשר לבקש ממני להגדיר סקירה חודשית אוטומטית שתעבור על השינויים בעמלות ובכללי המס ותזכיר לך מה לבדוק.</p>
+  </div>`;
+}
+document.addEventListener("click", e=>{
+  if (e.target.id==="mPrev"){ monthOffset--; render(); }
+  if (e.target.id==="mNext" && monthOffset<1){ monthOffset++; render(); }
+});
+document.addEventListener("change", e=>{
+  const id = e.target.dataset?.m; if (!id) return;
+  const d = new Date(); d.setDate(1); d.setMonth(d.getMonth()+monthOffset);
+  const mk = monthKey(new Date(d.getFullYear(), d.getMonth(), 15));
+  (S.monthly[mk] ||= {})[id] = e.target.checked; save();
+  const items = monthItems(d), n = items.filter(i=>S.monthly[mk][i[0]]).length;
+  const pill = $(".sectionhead .pill"); if (pill){ pill.textContent = `${n}/${items.length} הושלמו`; pill.classList.toggle("good", n===items.length); }
+  const bar = $(".bar i"); if (bar) bar.style.width = (n/items.length*100)+"%";
+});
+
+/* ---------- boot ---------- */
+buildNav(); render(); connectDb();
+</script></body></html>
